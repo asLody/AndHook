@@ -7,6 +7,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import android.util.Pair;
 
 public class DalvikHook {
+	private static boolean loaded = false;
+
+	public static void init() {
+		if (!loaded) {
+			System.loadLibrary("andhook");
+			loaded = true;
+		}
+	}
+
 	private static Map<Pair<String, String>, Integer> sBackups = new ConcurrentHashMap<>();
 
 	private static native void dvmHookNativeNoBackup(Method origin,
@@ -14,7 +23,6 @@ public class DalvikHook {
 
 	private static native int dvmHookNative(Method origin, Method replace);
 
-	// for backup methods
 	private static native void dvmInvokeVoidMethod(int backUpSlot,
 			Object receiver, Object... params);
 

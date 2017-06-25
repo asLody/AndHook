@@ -3,6 +3,16 @@ package apk.andhook;
 import java.lang.reflect.Method;
 
 public class AndHook {
+	public static Method findMethod(Class<?> cls, String name,
+			Class<?>... parameterTypes) {
+		try {
+			return cls.getDeclaredMethod(name, parameterTypes);
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 	public static void hookNoBackup(final Method origin, final Method replace) {
 		if (android.os.Build.VERSION.SDK_INT <= 19) {
 			DalvikHook.hookNoBackup(origin, replace);

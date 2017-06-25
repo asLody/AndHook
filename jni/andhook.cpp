@@ -313,11 +313,7 @@ extern "C" {
 			return JNI_EVERSION;
 		} //if
 		
-// 		jclass clazz = env->FindClass("com/xyapp/fuckit/MainActivity");
-// 		JNINativeMethod gMethods[] = {
-// 			{ NATIVE_METHOD(dvmDebug, "(Lcom/xyapp/fuckit/MainActivity;Landroid/telephony/TelephonyManager;Ljava/lang/reflect/Method;Ljava/lang/reflect/Method;)V") },
-// 		};
-		jclass clazz = env->FindClass("io/virtualhook/DalvikHook");
+		jclass clazz = env->FindClass("apk/andhook/DalvikHook");
 		JNINativeMethod gMethods[] = {
 			{ NATIVE_METHOD(dvmHookNativeNoBackup, "(Ljava/lang/reflect/Method;Ljava/lang/reflect/Method;)V") },
 			{ NATIVE_METHOD(dvmHookNative, "(Ljava/lang/reflect/Method;Ljava/lang/reflect/Method;)I") },
