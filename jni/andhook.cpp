@@ -59,7 +59,10 @@ static int __native_hook(JNIEnv *env, Method *vm_origin, jobject target)
 		LOGI("%s: hook direct %s%s -> %s%s", __FUNCTION__,
 			 vm_origin->clazz->descriptor, vm_origin->name,
 			 vm_target->clazz->descriptor, vm_target->name);
-		*vm_origin = *vm_target;
+		// fixs for NoSuchMethodError
+		const char *vm_name = vm_origin->name;
+		*vm_origin          = *vm_target;
+		vm_origin->name     = vm_name;
 		return 1;
 	} //if
 
