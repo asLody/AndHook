@@ -40,6 +40,8 @@ public class ArtHook {
 				Pair.create(replace.getDeclaringClass().getName(),
 						replace.getName()), backUp);
 
+		// Log.d("ART", replace.getDeclaringClass().getName() + ":" + replace.getName());
+		
 		// 2. replace method
 		hookNoBackup(origin, replace);
 	}
@@ -47,6 +49,7 @@ public class ArtHook {
 	public static Object callOrigin(Object receiver, Object... params) {
 		final StackTraceElement currentStack = Thread.currentThread()
 				.getStackTrace()[4];
+		// Log.d("ART", currentStack.getClassName() + ":" + currentStack.getMethodName());
 		final Method method = sBackups.get(Pair.create(
 				currentStack.getClassName(), currentStack.getMethodName()));
 

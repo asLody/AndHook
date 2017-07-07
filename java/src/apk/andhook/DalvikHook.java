@@ -61,8 +61,8 @@ public class DalvikHook {
 		final int backUpSlot = dvmHookNative(origin, replace);
 		// @TODO Overload method is not supported
 		sBackups.put(
-				Pair.create(replace.getDeclaringClass().getName(),
-						replace.getName()), backUpSlot);
+				Pair.create(origin.getDeclaringClass().getName(),
+						origin.getName()), backUpSlot);
 	}
 
 	private static int getBackupMethodSlot() {

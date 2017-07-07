@@ -47,10 +47,10 @@ static __typeof__(&dvmThreadSelf)          g_dvmThreadSelf;
 
 //-------------------------------------------------------------------------
 
-static int __native_hook(JNIEnv *env, Method *vm_origin, jobject target)
+static int __native_hook(JNIEnv *env, Method *vm_origin, Method *vm_target)
 {
 //	Method *vm_origin = reinterpret_cast<Method *>(env->FromReflectedMethod(origin));
-	Method *vm_target = reinterpret_cast<Method *>(env->FromReflectedMethod(target));
+//	Method *vm_target = reinterpret_cast<Method *>(env->FromReflectedMethod(target));
 
 //	Dalvik puts private, static, and constructors into non-virtual table
 //	g_dvmIsDirectMethod(vm_origin)
@@ -86,7 +86,8 @@ static int __native_hook(JNIEnv *env, Method *vm_origin, jobject target)
 static void JNICALL dvmHookNativeNoBackup(JNIEnv *env, jclass, jobject origin, jobject target)
 {
 	Method *vm_origin = reinterpret_cast<Method *>(env->FromReflectedMethod(origin));
-	__native_hook(env, vm_origin, target);
+	Method *vm_target = reinterpret_cast<Method *>(env->FromReflectedMethod(target));
+	__native_hook(env, vm_origin, vm_target);
 }
 
 //-------------------------------------------------------------------------
@@ -101,10 +102,14 @@ static jint JNICALL dvmHookNative(JNIEnv *env, jclass, jobject origin, jobject t
 
 	Method *vm_origin = reinterpret_cast<Method *>(env->FromReflectedMethod(origin));
 	g_backups[slot]   = *vm_origin;
-	
-	if (__native_hook(env, vm_origin, target) == 0) {
+	Method *vm_target = reinterpret_cast<Method *>(env->FromReflectedMethod(target));
+	if (__native_hook(env, vm_origin, vm_target) == 0) {
 		CLEAR_METHOD_FLAG(&g_backups[slot], ACC_PUBLIC);
 		SET_METHOD_FLAG(&g_backups[slot], ACC_PRIVATE);
+
+		// fixs for Java.NullPointerException when looking for
+		// backup method by stack method name, but target method may not be found later 
+		vm_target->name = vm_origin->name;
 	} //if
 
 	return slot;
