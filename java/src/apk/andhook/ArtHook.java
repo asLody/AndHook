@@ -23,80 +23,91 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ArtHook {
 	private static final String TAG = "ArtHook";
-	private static Map<Pair<String, String>, Method> sBackups = new ConcurrentHashMap<>();
+	private static final Class<?> sAbstractMethod = Method.class
+			.getSuperclass();
+	private static final Map<Pair<String, String>, Method> sBackups = new ConcurrentHashMap<>();
 
 	public static void hookNoBackup(final Method origin, final Method replace) {
 		// replace method
-		Memory.memcpy(MethodInspect.getMethodAddress(origin),
+		Unsafe.alignedCopy(MethodInspect.getMethodAddress(origin),
 				MethodInspect.getMethodAddress(replace),
-				MethodInspect.getArtMethodSize());
+				MethodInspect.getArtMethodSize(),
+				Modifier.isStatic(origin.getModifiers()));
 	}
 
-	public static void hook(Method origin, Method replace) {
+	public static void hook(final Method origin, final Method replace) {
 		// 1. backup
 		final Method backUp = backUp(origin, replace);
 		// @TODO Overload method is not supported
-		sBackups.put(
-				Pair.create(replace.getDeclaringClass().getName(),
-						replace.getName()), backUp);
+		if (Build.VERSION.SDK_INT == 21 && Modifier.isStatic(origin.getModifiers())) {
+			sBackups.put(
+					Pair.create(origin.getDeclaringClass().getName(),
+							origin.getName()), backUp);
+		} else {
+			sBackups.put(
+					Pair.create(replace.getDeclaringClass().getName(),
+							replace.getName()), backUp);
+		}
 
-		// Log.d("ART", replace.getDeclaringClass().getName() + ":" + replace.getName());
-		
+		// Log.d("ART", replace.getDeclaringClass().getName() + ":" +
+		// replace.getName());
+
 		// 2. replace method
 		hookNoBackup(origin, replace);
 	}
 
-	public static Object callOrigin(Object receiver, Object... params) {
+	public static Object callOrigin(final Object receiver,
+			final Object... params) {
 		final StackTraceElement currentStack = Thread.currentThread()
 				.getStackTrace()[4];
-		// Log.d("ART", currentStack.getClassName() + ":" + currentStack.getMethodName());
+		// Log.d("ART", currentStack.getClassName() + ":" +
+		// currentStack.getMethodName());
 		final Method method = sBackups.get(Pair.create(
 				currentStack.getClassName(), currentStack.getMethodName()));
 
 		try {
 			return method.invoke(receiver, params);
 		} catch (Throwable e) {
-			throw new UnsupportedException("invoke origin method error", e);
+			throw new RuntimeException("invoke origin method error", e);
 		}
 	}
 
-	private static Method backUp(Method origin, Method replace) {
+	private static Method backUp(final Method origin, final Method replace) {
 		try {
 			if (Build.VERSION.SDK_INT < 23) {
-				final Class<?> artMethodClass = Class
+				final Class<?> classArtMethod = Class
 						.forName("java.lang.reflect.ArtMethod");
-				final Field accessFlagsField = artMethodClass
-						.getDeclaredField("accessFlags");
-				accessFlagsField.setAccessible(true);
-
-				final Constructor<?> artMethodConstructor = artMethodClass
+				final Constructor<?> constructorOfArtMethod = classArtMethod
 						.getDeclaredConstructor();
-				artMethodConstructor.setAccessible(true);
+				constructorOfArtMethod.setAccessible(true);
+				final Constructor<Method> constructorOfmethod = Method.class
+						.getDeclaredConstructor(classArtMethod);
 
 				// new Method(ArtMethod artMethod)
-				final Object newArtMethod = artMethodConstructor.newInstance();
-				final Constructor<Method> methodConstructor = Method.class
-						.getDeclaredConstructor(artMethodClass);
-				final Method newMethod = methodConstructor
+				final Object newArtMethod = constructorOfArtMethod
+						.newInstance();
+				final Method newMethod = constructorOfmethod
 						.newInstance(newArtMethod);
 				newMethod.setAccessible(true);
 
-				Memory.memcpy(MethodInspect.getMethodAddress(newMethod),
+				Unsafe.alignedCopy(MethodInspect.getMethodAddress(newMethod),
 						MethodInspect.getMethodAddress(origin),
-						MethodInspect.getArtMethodSize());
+						MethodInspect.getArtMethodSize(), false);
 
+				final Field accessFlagsField = classArtMethod
+						.getDeclaredField("accessFlags");
+				accessFlagsField.setAccessible(true);
 				accessFlagsField.set(newArtMethod,
-						(Integer) accessFlagsField.get(newArtMethod)
+						(int) accessFlagsField.get(newArtMethod)
 								& (~Modifier.PUBLIC) | Modifier.PRIVATE);
 				return newMethod;
 			} else {
 				// AbstractMethod
-				final Class<?> abstractMethodClass = Method.class
-						.getSuperclass();
-				final Field accessFlagsField = abstractMethodClass
+				final Field accessFlagsField = sAbstractMethod
 						.getDeclaredField("accessFlags");
 				accessFlagsField.setAccessible(true);
-				final Field artMethodField = abstractMethodClass
+
+				final Field artMethodField = sAbstractMethod
 						.getDeclaredField("artMethod");
 				artMethodField.setAccessible(true);
 
@@ -117,7 +128,7 @@ public class ArtHook {
 				// clone the origin method
 				final Method newMethod = methodConstructor.newInstance();
 				newMethod.setAccessible(true);
-				for (Field field : abstractMethodClass.getDeclaredFields()) {
+				for (Field field : sAbstractMethod.getDeclaredFields()) {
 					field.setAccessible(true);
 					field.set(newMethod, field.get(origin));
 				}
@@ -147,8 +158,9 @@ public class ArtHook {
 					// sizeof(GCRoot) = 4
 					ACC_FLAG_OFFSET = 4;
 				}
-				Memory.memcpy(artMethodAddress,
-						MethodInspect.getMethodAddress(origin), artMethodSize);
+				Unsafe.alignedCopy(artMethodAddress,
+						MethodInspect.getMethodAddress(origin), artMethodSize,
+						false);
 
 				final byte[] newMethodBytes = new byte[artMethodSize];
 				artMethod.get(newMethodBytes);
@@ -193,14 +205,15 @@ public class ArtHook {
 				return newMethod;
 			}
 		} catch (Throwable e) {
-			throw new UnsupportedException("can not backup method", e);
+			throw new RuntimeException("can not backup method", e);
 		}
 	}
 
 	private static class Reflection {
-		public static Object call(Class<?> clazz, String className,
-				String methodName, Object receiver, Class<?>[] types,
-				Object[] params) throws UnsupportedException {
+		public static Object call(Class<?> clazz, final String className,
+				final String methodName, final Object receiver,
+				final Class<?>[] types, final Object[] params)
+				throws RuntimeException {
 			try {
 				if (clazz == null)
 					clazz = Class.forName(className);
@@ -209,12 +222,12 @@ public class ArtHook {
 				method.setAccessible(true);
 				return method.invoke(receiver, params);
 			} catch (Throwable throwable) {
-				throw new UnsupportedException("reflection error:", throwable);
+				throw new RuntimeException("reflect call error", throwable);
 			}
 		}
 
-		public static Object get(Class<?> clazz, String className,
-				String fieldName, Object receiver) {
+		public static Object get(Class<?> clazz, final String className,
+				final String fieldName, final Object receiver) {
 			try {
 				if (clazz == null)
 					clazz = Class.forName(className);
@@ -222,26 +235,25 @@ public class ArtHook {
 				field.setAccessible(true);
 				return field.get(receiver);
 			} catch (Throwable e) {
-				throw new UnsupportedException("reflection error:", e);
+				throw new RuntimeException("reflect get error", e);
 			}
 		}
 	}
 
 	public static class MethodInspect {
+		private static long sMethodSize = 0;
 
-		static long sMethodSize = -1;
-
-		public static void ruler1() {
+		public static void a() {
 		}
 
-		public static void ruler2() {
+		public static void b() {
 		}
 
-		public static long getMethodAddress(Method method) {
-			final Object mirrorMethod = Reflection.get(
-					Method.class.getSuperclass(), null, "artMethod", method);
+		public static long getMethodAddress(final Method method) {
+			final Object mirrorMethod = Reflection.get(sAbstractMethod, null,
+					"artMethod", method);
 			if (mirrorMethod.getClass().equals(Long.class)) {
-				return (Long) mirrorMethod;
+				return (long) mirrorMethod;
 			}
 			return Unsafe.getObjectAddress(mirrorMethod);
 		}
@@ -250,79 +262,69 @@ public class ArtHook {
 			if (sMethodSize <= 0) {
 				try {
 					final Method f1 = MethodInspect.class
-							.getDeclaredMethod("ruler1");
+							.getDeclaredMethod("a");
 					final Method f2 = MethodInspect.class
-							.getDeclaredMethod("ruler2");
+							.getDeclaredMethod("b");
 					sMethodSize = getMethodAddress(f2) - getMethodAddress(f1);
-					return sMethodSize;
 				} catch (Exception e) {
-					throw new RuntimeException(
-							"exceuse me ?? can not found method??");
+					throw new RuntimeException(e);
 				}
 			}
 			return sMethodSize;
 		}
 
-		public static byte[] getMethodBytes(Method method) {
+		public static byte[] getMethodBytes(final Method method) {
 			if (method == null) {
 				return null;
 			}
-			final byte[] ret = new byte[(int) getArtMethodSize()];
+			final byte[] bytes = new byte[(int) getArtMethodSize()];
 			final long baseAddr = getMethodAddress(method);
-			for (int i = 0; i < ret.length; ++i) {
-				ret[i] = Memory.peekByte(baseAddr + i);
-			}
-			return ret;
+			libcore.io.Memory.peekByteArray(baseAddr, bytes, 0, bytes.length);
+			return bytes;
 		}
 	}
 
-	private static class Memory {
+	private static class Unsafe {
+		private static sun.misc.Unsafe unsafe = null;
 
-		// libcode.io.Memory#peekByte
-		static byte peekByte(long address) {
-			return (Byte) Reflection.call(null, "libcore.io.Memory",
-					"peekByte", null, new Class[] { long.class },
-					new Object[] { address });
-		}
-
-		static void pokeByte(long address, byte value) {
-			Reflection.call(null, "libcore.io.Memory", "pokeByte", null,
-					new Class[] { long.class, byte.class }, new Object[] {
-							address, value });
-		}
-
-		public static void memcpy(long dst, long src, long length) {
-			for (long i = 0; i < length; ++i) {
-				pokeByte(dst, peekByte(src));
-				++dst;
-				++src;
+		private static void init() {
+			try {
+				unsafe = (sun.misc.Unsafe) Reflection.get(
+						sun.misc.Unsafe.class, null, "THE_ONE", null);
+			} catch (RuntimeException e) {
+				throw new RuntimeException(
+						"failed to get instance of sun.misc.Unsafe", e);
 			}
 		}
-	}
 
-	static class Unsafe {
-		static final String UNSAFE_CLASS = "sun.misc.Unsafe";
-		static Object THE_UNSAFE = Reflection.get(null, UNSAFE_CLASS,
-				"THE_ONE", null);
-
-		public static long getObjectAddress(Object o) {
+		public static long getObjectAddress(final Object o) {
+			if (unsafe == null)
+				init();
 			final Object[] objects = { o };
-			final Integer baseOffset = (Integer) Reflection.call(null,
-					UNSAFE_CLASS, "arrayBaseOffset", THE_UNSAFE,
-					new Class[] { Class.class },
-					new Object[] { Object[].class });
-			return ((Number) Reflection.call(null, UNSAFE_CLASS, "getInt",
-					THE_UNSAFE, new Class[] { Object.class, long.class },
-					new Object[] { objects, baseOffset.longValue() }))
-					.longValue();
+			return unsafe.getInt(objects,
+					unsafe.arrayBaseOffset(Object[].class));
 		}
-	}
 
-	private static class UnsupportedException extends RuntimeException {
-		private static final long serialVersionUID = 1L;
-
-		UnsupportedException(String message, Throwable cause) {
-			super(message, cause);
+		public static void alignedCopy(long dst, long src, long length,
+				boolean shouldFix) {
+			// java.nio.ByteOrder.nativeOrder()
+			int dex_method_index_ = 0;
+			if (shouldFix && Build.VERSION.SDK_INT == 21) {
+				dex_method_index_ = libcore.io.Memory.peekInt(dst + 16 * 4,
+						false);
+			}
+			// String sdst = "", ssrc = "";
+			for (length /= 4; length > 0; --length, dst += 4, src += 4) {
+				// sdst += libcore.io.Memory.peekInt(dst, false) + ", ";
+				// ssrc += libcore.io.Memory.peekInt(src, false) + ", ";
+				libcore.io.Memory.pokeInt(dst,
+						libcore.io.Memory.peekInt(src, false), false);
+			}
+			if (dex_method_index_ != 0) {
+				libcore.io.Memory.pokeInt(dst - 16, dex_method_index_, false);
+			}
+			// Log.d("dst", sdst);
+			// Log.d("src", ssrc);
 		}
 	}
 }
