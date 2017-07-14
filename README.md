@@ -35,9 +35,9 @@ AndHook consists of the following part:
 	// AndHook saves original method internationally, 
 	// and returns just primitive index to reduce memory usage.
 	int slot = AndHook.hook(final Method origin, final Method replacement);
-	// Invoke original method. 
+	// Invokes original method. 
 	// The box/unbox operations are done by AndHook in dalvik-vm mode while JVM in art mode.
-	invokeXXXMethod(slot, ...);
+	AndHook.invokeXXXMethod(slot, ...);
 	// Or, you can use HookHelper, which saves the slot automatically for you.
 ```
 For concrete usage, please see [AndTest.java](https://github.com/rrrfff/AndHook/blob/master/java/src/apk/andhook/test/AndTest.java)
