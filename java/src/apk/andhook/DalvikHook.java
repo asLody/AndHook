@@ -1,115 +1,50 @@
 package apk.andhook;
 
 import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-import android.util.Pair;
+public final class DalvikHook {
+	public static final class Native {
+		private static native void a();
 
-public class DalvikHook {
-	private static boolean loaded = false;
-
-	public static void init() {
-		if (!loaded) {
-			System.loadLibrary("andhook");
-			loaded = true;
-		}
+		private static native void b();
 	}
 
-	private static Map<Pair<String, String>, Integer> sBackups = new ConcurrentHashMap<>();
+	public static native void replaceMethod(final Method origin,
+			final Method replace);
 
-	private static native void dvmHookNativeNoBackup(Method origin,
-			Method replace);
+	public static native int hookNative(final Method origin,
+			final Method replace);
 
-	private static native int dvmHookNative(Method origin, Method replace);
+	public static native void hookNativeNoBackup(final Method origin,
+			final Method replace);
 
-	private static native void dvmInvokeVoidMethod(int backUpSlot,
-			Object receiver, Object... params);
+	public static native void invokeVoidMethod(final int slot,
+			final Object receiver, final Object... params);
 
-	private static native boolean dvmInvokeBooleanMethod(int backUpSlot,
-			Object receiver, Object... params);
+	public static native boolean invokeBooleanMethod(final int slot,
+			final Object receiver, final Object... params);
 
-	private static native byte dvmInvokeByteMethod(int backUpSlot,
-			Object receiver, Object... params);
+	public static native byte invokeByteMethod(final int slot,
+			final Object receiver, final Object... params);
 
-	private static native short dvmInvokeShortMethod(int backUpSlot,
-			Object receiver, Object... params);
+	public static native short invokeShortMethod(final int slot,
+			final Object receiver, final Object... params);
 
-	private static native char dvmInvokeCharMethod(int backUpSlot,
-			Object receiver, Object... params);
+	public static native char invokeCharMethod(final int slot,
+			final Object receiver, final Object... params);
 
-	private static native int dvmInvokeIntMethod(int backUpSlot,
-			Object receiver, Object... params);
+	public static native int invokeIntMethod(final int slot,
+			final Object receiver, final Object... params);
 
-	private static native long dvmInvokeLongMethod(int backUpSlot,
-			Object receiver, Object... params);
+	public static native long invokeLongMethod(final int slot,
+			final Object receiver, final Object... params);
 
-	private static native float dvmInvokeFloatMethod(int backUpSlot,
-			Object receiver, Object... params);
+	public static native float invokeFloatMethod(final int slot,
+			final Object receiver, final Object... params);
 
-	private static native double dvmInvokeDoubleMethod(int backUpSlot,
-			Object receiver, Object... params);
+	public static native double invokeDoubleMethod(final int slot,
+			final Object receiver, final Object... params);
 
-	private static native Object dvmInvokeObjectMethod(int backUpSlot,
-			Object receiver, Object... params);
-
-	public static void hookNoBackup(final Method origin, final Method replace) {
-		dvmHookNativeNoBackup(origin, replace);
-	}
-
-	public static void hook(Method origin, Method replace) {
-		final int backUpSlot = dvmHookNative(origin, replace);
-		// @TODO Overload method is not supported
-		sBackups.put(
-				Pair.create(origin.getDeclaringClass().getName(),
-						origin.getName()), backUpSlot);
-	}
-
-	private static int getBackupMethodSlot() {
-		final StackTraceElement currentStack = Thread.currentThread()
-				.getStackTrace()[5];
-		final int backupSlot = sBackups.get(Pair.create(
-				currentStack.getClassName(), currentStack.getMethodName()));
-		return backupSlot;
-	}
-
-	public static void callVoidOrigin(Object receiver, Object... params) {
-		dvmInvokeVoidMethod(getBackupMethodSlot(), receiver, params);
-	}
-
-	public static boolean callBooleanOrigin(Object receiver, Object... params) {
-		return dvmInvokeBooleanMethod(getBackupMethodSlot(), receiver, params);
-	}
-
-	public static byte callByteOrigin(Object receiver, Object... params) {
-		return dvmInvokeByteMethod(getBackupMethodSlot(), receiver, params);
-	}
-
-	public static short callShortOrigin(Object receiver, Object... params) {
-		return dvmInvokeShortMethod(getBackupMethodSlot(), receiver, params);
-	}
-
-	public static char callCharOrigin(Object receiver, Object... params) {
-		return dvmInvokeCharMethod(getBackupMethodSlot(), receiver, params);
-	}
-
-	public static int callIntOrigin(Object receiver, Object... params) {
-		return dvmInvokeIntMethod(getBackupMethodSlot(), receiver, params);
-	}
-
-	public static long callLongOrigin(Object receiver, Object... params) {
-		return dvmInvokeLongMethod(getBackupMethodSlot(), receiver, params);
-	}
-
-	public static float callFloatOrigin(Object receiver, Object... params) {
-		return dvmInvokeFloatMethod(getBackupMethodSlot(), receiver, params);
-	}
-
-	public static double callDoubleOrigin(Object receiver, Object... params) {
-		return dvmInvokeDoubleMethod(getBackupMethodSlot(), receiver, params);
-	}
-
-	public static Object callObjectOrigin(Object receiver, Object... params) {
-		return dvmInvokeObjectMethod(getBackupMethodSlot(), receiver, params);
-	}
+	public static native Object invokeObjectMethod(final int slot,
+			final Object receiver, final Object... params);
 }
