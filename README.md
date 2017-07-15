@@ -32,7 +32,7 @@ AndHook consists of the following part:
 ```
 - additional method backup (allows you to invoke orginal method anywhere):
 ```java
-	// AndHook saves original method internationally, 
+	// AndHook saves original method internally, 
 	// and returns just primitive index to reduce memory usage.
 	int slot = AndHook.hook(final Method origin, final Method replacement);
 	// Invokes original method. 
@@ -40,7 +40,7 @@ AndHook consists of the following part:
 	AndHook.invokeXXXMethod(slot, ...);
 	// Or, you can use HookHelper, which saves the slot automatically for you.
 ```
-For concrete usage, please see [AndTest.java](https://github.com/rrrfff/AndHook/blob/master/java/src/apk/andhook/test/AndTest.java)
+For concrete usage, please see [AndTest.java](https://raw.githubusercontent.com/rrrfff/AndHook/master/test/src/apk/andhook/test/AndTest.java)
 
 # Reference
 [《Android热修复升级探索——追寻极致的代码热替换》](https://yq.aliyun.com/articles/74598)  
