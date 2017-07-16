@@ -1,8 +1,8 @@
 # AndHook
-AndHook is a lightweight java method hook framework for android, which supports both dalvik and art environment. It is primarily written in C++ so as to achieve good performance, but has java friendly apis as well.  
+AndHook is a lightweight java method hook framework for android, which supports both dalvik and art environment. It is primarily written in C++ so as to achieve optimal performance, but has java friendly apis as well.  
 
 # Support
-Android 4.x or later, most of the ROMs and devices (armeabi-v7a and x86).
+Android 4.x or later, most of the ROMs and devices (armeabi-v7a, arm64-v8a, x86, x86_64).
 
 # Structure
 AndHook consists of the following part:  
@@ -40,7 +40,7 @@ AndHook consists of the following part:
 	AndHook.invokeXXXMethod(slot, ...);
 	// Or, you can use HookHelper, which saves the slot automatically for you.
 ```
-For concrete usage, please see [AndTest.java](https://raw.githubusercontent.com/rrrfff/AndHook/master/test/src/apk/andhook/test/AndTest.java)
+For concrete usage, please see [AndTest.java](https://raw.githubusercontent.com/rrrfff/AndHook/master/java/test/src/apk/andhook/test/AndTest.java)
 
 # Reference
-[¡¶AndroidÈÈĞŞ¸´Éı¼¶Ì½Ë÷¡ª¡ª×·Ñ°¼«ÖÂµÄ´úÂëÈÈÌæ»»¡·](https://yq.aliyun.com/articles/74598)  
+[ã€ŠAndroidçƒ­ä¿®å¤å‡çº§æ¢ç´¢â€”â€”è¿½å¯»æè‡´çš„ä»£ç çƒ­æ›¿æ¢ã€‹](https://yq.aliyun.com/articles/74598)
