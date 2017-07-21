@@ -1,18 +1,22 @@
 package apk.andhook;
 
 import java.lang.reflect.Method;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import android.util.Pair;
 
+/**
+ * @author rrrfff
+ * @version 2.0.0
+ *
+ */
 public class AndHook {
 	static {
 		System.loadLibrary("andhook");
 	}
 
-	public static class HookHelper {
-		private static final Map<Pair<String, String>, Integer> sBackups = new ConcurrentHashMap<>();
+	public static final class HookHelper {
+		private static final ConcurrentHashMap<Pair<String, String>, Integer> sBackups = new ConcurrentHashMap<>();
 
 		public static void hook(final Method origin, final Method replace) {
 			final Pair<String, String> origin_key = Pair.create(origin
@@ -24,7 +28,7 @@ public class AndHook {
 			sBackups.put(target_key, slot);
 		}
 
-		public static int getBackupSlot() {
+		private static int getBackupSlot() {
 			final StackTraceElement currentStack = Thread.currentThread()
 					.getStackTrace()[4];
 			return sBackups.get(Pair.create(currentStack.getClassName(),
@@ -145,29 +149,15 @@ public class AndHook {
 		}
 	}
 
-	public static void replaceMethod(final Method origin, final Method replace) {
-		if (android.os.Build.VERSION.SDK_INT <= 19) {
-			DalvikHook.replaceMethod(origin, replace);
-		} else {
-			ArtHook.replaceMethod(origin, replace);
-		}
-	}
+	public static native void replaceMethod(final Method origin,
+			final Method replace);
 
-	public static int hook(final Method origin, final Method replace) {
-		if (android.os.Build.VERSION.SDK_INT <= 19) {
-			return DalvikHook.hookNative(origin, replace);
-		} else {
-			return ArtHook.hookNative(origin, replace);
-		}
-	}
+	public static native int hook(final Method origin, final Method replace);
 
-	public static void hookNoBackup(final Method origin, final Method replace) {
-		if (android.os.Build.VERSION.SDK_INT <= 19) {
-			DalvikHook.hookNativeNoBackup(origin, replace);
-		} else {
-			ArtHook.hookNativeNoBackup(origin, replace);
-		}
-	}
+	public static native void hookNoBackup(final Method origin,
+			final Method replace);
+
+	public static native void ensureClassInitialized(final Class<?> origin);
 
 	public static void invokeVoidMethod(final int slot, final Object receiver,
 			final Object... params) {
@@ -347,5 +337,48 @@ public class AndHook {
 		} else {
 			return ArtHook.invokeMethod(slot, null, params);
 		}
+	}
+
+	protected static final class Native {
+		private static native void a();
+
+		private static native void b();
+	}
+
+	private static final class ArtHook {
+		public static native Object invokeMethod(final int slot,
+				final Object receiver, final Object... params);
+	}
+
+	private static final class DalvikHook {
+		public static native void invokeVoidMethod(final int slot,
+				final Object receiver, final Object... params);
+
+		public static native boolean invokeBooleanMethod(final int slot,
+				final Object receiver, final Object... params);
+
+		public static native byte invokeByteMethod(final int slot,
+				final Object receiver, final Object... params);
+
+		public static native short invokeShortMethod(final int slot,
+				final Object receiver, final Object... params);
+
+		public static native char invokeCharMethod(final int slot,
+				final Object receiver, final Object... params);
+
+		public static native int invokeIntMethod(final int slot,
+				final Object receiver, final Object... params);
+
+		public static native long invokeLongMethod(final int slot,
+				final Object receiver, final Object... params);
+
+		public static native float invokeFloatMethod(final int slot,
+				final Object receiver, final Object... params);
+
+		public static native double invokeDoubleMethod(final int slot,
+				final Object receiver, final Object... params);
+
+		public static native Object invokeObjectMethod(final int slot,
+				final Object receiver, final Object... params);
 	}
 }
