@@ -5,28 +5,21 @@ AndHook is a lightweight java method hook framework for android, which supports 
 Android 4.x or later, most of the ROMs and devices (armeabi-v7a, arm64-v8a, x86, x86_64).
 
 # Structure
-AndHook consists of the following part:  
-- java
-	- AndHook.java    
-		- optional bridge class of ArtHook and DalvikHook, and an inner class HookHelper is provided to help simplify method backup
-	- ArtHook.java    
-		- ART hook apis
-	- DalvikHook.java    
-		- Dalvik VM hook apis  
-- jni
-	- andhook.cpp    
-		- JNI_OnLoad/JNI_OnUnLoad
-	- art.cpp    
-		- ART hook implementation
-	- dalvik_vm.cpp    
-		- Dalvik VM hook implementation 
+AndHook consists of only one java file (AndHook.java) and binaries for specified architectures, no other dependencies.  
+- AndHook.java provides an optional bridge class of ArtHook and DalvikHook, and an inner class HookHelper to help simplify method backup.
 
 # Usage
+Just put AndHook.java and binaries (*.so files) into proper directories, and do what you want. You don't need to compile jni code yourself as precompiled binaries is provided, and everyone who wants to contribute to it please contact me, thanks.
+- makes sure that all the classes involved are initialized, e.g. non-system classes. To prevent GC collections, AndHook will keep global reference of the class as well.
+```java
+	AndHook.ensureClassInitialized(A.class);
+	AndHook.ensureClassInitialized(B.class);
+```
 - simply replaces a method (compatible with all Android version, but may encounter some issues such as NoSuchMethodError. `You should try this first to see if it meets your requirements`):
 ```java
 	AndHook.replaceMethod(final Method origin, final Method replacement);
 ```
-- replaces a method and applys workaround for known issues (with limited self-adapting capabilities, needs more tests):
+- replaces a method and applys workaround for known issues mentioned above (with limited self-adapting capabilities, needs more tests):
 ```java
 	AndHook.hookNoBackup(final Method origin, final Method replacement);
 ```
