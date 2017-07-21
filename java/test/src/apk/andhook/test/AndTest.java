@@ -8,6 +8,32 @@ import android.util.Log;
 import apk.andhook.AndHook.HookHelper;
 
 public class AndTest {
+	private static void testHookStaticMethodFromDifferentClass() {
+		try {
+			// The following code should be called once and only once
+			// as A.class and B.class may not have been initialized and
+			// AndHook will keep global reference of them to prevent GC collections.
+			apk.andhook.AndHook.ensureClassInitialized(A.class);
+			apk.andhook.AndHook.ensureClassInitialized(B.class);
+			
+			final Method m1 = A.class.getDeclaredMethod("AA",
+					String.class);
+			final Method m2 = B.class.getDeclaredMethod("BB",
+					String.class);
+			Log.d(AndTest.class.toString(),
+					"begin hook public static method A::AA...");
+			HookHelper.hook(m1, m2);
+			Log.d(AndTest.class.toString(), "end hook public static method A::AA");
+
+			Log.d(AndTest.class.toString(),
+					"calling public static method A::AA...");
+			Log.d(AndTest.class.toString(), "public static method A::AA returns ["
+					+ A.AA("test") + "]");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public static String a1(final String s) {
 		Log.d(AndTest.class.toString(), "public static method a1 hit!");
 		return "return from a1 with param " + s;
@@ -20,6 +46,7 @@ public class AndTest {
 					s + "+a2");
 			Log.d(AndTest.class.toString(), "callStaticObjectOrigin return "
 					+ obj);
+			obj.toString();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -105,6 +132,7 @@ public class AndTest {
 
 	public static void RunTest(final android.content.Context context,
 			final android.content.ContentResolver resolver) {
+		testHookStaticMethodFromDifferentClass();
 		testHookStaticMethod();
 		testHookMethod();
 
