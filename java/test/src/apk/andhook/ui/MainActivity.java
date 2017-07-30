@@ -24,6 +24,5 @@ public class MainActivity extends Activity {
 				android.util.Log.d(MainActivity.class.toString(), "end.");
 			}
 		});
-		apk.andhook.test.AndTest.RunTest(this, this.getContentResolver());
 	}
 }

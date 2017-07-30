@@ -3,37 +3,56 @@ package apk.andhook.test;
 import java.lang.reflect.Method;
 
 import android.content.ContentResolver;
+import android.os.Bundle;
 import android.provider.Settings.Secure;
 import android.util.Log;
 import apk.andhook.AndHook.HookHelper;
 
 public class AndTest {
+	void onCreate(final Bundle savedInstanceState) {
+		Log.d(this.getClass().toString(), "Activity::onCreate start");
+		HookHelper.callVoidOrigin(this, savedInstanceState);
+		Log.d(this.getClass().toString(), "Activity::onCreate end");
+	}
+
+	private static void testHookActivity_onCreate() {
+		try {
+			final Method m1 = android.app.Activity.class.getDeclaredMethod(
+					"onCreate", Bundle.class);
+			final Method m2 = AndTest.class.getDeclaredMethod("onCreate",
+					Bundle.class);
+			HookHelper.hook(m1, m2);
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		}
+	}
+
 	private static void testHookStaticMethodFromDifferentClass() {
 		try {
 			// The following code should be called once and only once
 			// as A.class and B.class may not have been initialized and
-			// AndHook will keep global reference of them to prevent GC collections.
+			// AndHook will keep global reference of them to prevent GC
+			// collections.
 			apk.andhook.AndHook.ensureClassInitialized(A.class);
 			apk.andhook.AndHook.ensureClassInitialized(B.class);
-			
-			final Method m1 = A.class.getDeclaredMethod("AA",
-					String.class);
-			final Method m2 = B.class.getDeclaredMethod("BB",
-					String.class);
+
+			final Method m1 = A.class.getDeclaredMethod("AA", String.class);
+			final Method m2 = B.class.getDeclaredMethod("BB", String.class);
 			Log.d(AndTest.class.toString(),
 					"begin hook public static method A::AA...");
 			HookHelper.hook(m1, m2);
-			Log.d(AndTest.class.toString(), "end hook public static method A::AA");
+			Log.d(AndTest.class.toString(),
+					"end hook public static method A::AA");
 
 			Log.d(AndTest.class.toString(),
 					"calling public static method A::AA...");
-			Log.d(AndTest.class.toString(), "public static method A::AA returns ["
-					+ A.AA("test") + "]");
+			Log.d(AndTest.class.toString(),
+					"public static method A::AA returns [" + A.AA("test") + "]");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public static String a1(final String s) {
 		Log.d(AndTest.class.toString(), "public static method a1 hit!");
 		return "return from a1 with param " + s;
@@ -111,7 +130,8 @@ public class AndTest {
 		}
 	}
 
-	public static String getString(ContentResolver resolver, String name) {
+	public static String getString(final ContentResolver resolver,
+			final String name) {
 		Log.d(AndTest.class.toString(), "hit name = " + name);
 		return (String) HookHelper.callStaticObjectOrigin(Secure.class,
 				resolver, name);
@@ -132,6 +152,7 @@ public class AndTest {
 
 	public static void RunTest(final android.content.Context context,
 			final android.content.ContentResolver resolver) {
+		testHookActivity_onCreate();
 		testHookStaticMethodFromDifferentClass();
 		testHookStaticMethod();
 		testHookMethod();
