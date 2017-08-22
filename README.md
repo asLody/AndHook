@@ -36,6 +36,6 @@ Just put AndHook.java and binaries (*.so files) into proper directories, and do 
 For concrete usage, please see [AndTest.java](https://raw.githubusercontent.com/rrrfff/AndHook/master/java/test/src/apk/andhook/test/AndTest.java)
 
 # Reference
-[《Android热修复升级探索——追寻极致的代码热替换》](https://yq.aliyun.com/articles/74598)
-[Android N混合编译与对热补丁影响解析](https://github.com/WeMobileDev/article/blob/master/Android_N混合编译与对热补丁影响解析.md)
-[Implementing ART Just-In-Time (JIT) Compiler](https://source.android.com/devices/tech/dalvik/jit-compiler)
+[《Android热修复升级探索——追寻极致的代码热替换》](https://yq.aliyun.com/articles/74598)    
+[Android N混合编译与对热补丁影响解析](https://github.com/WeMobileDev/article/blob/master/Android_N混合编译与对热补丁影响解析.md)    
+[Implementing ART Just-In-Time (JIT) Compiler](https://source.android.com/devices/tech/dalvik/jit-compiler)    
