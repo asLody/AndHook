@@ -6,10 +6,8 @@
  */
 #pragma once
 #include <jni.h>
-#include <errno.h>
-#include <string.h>
+#include <stdint.h>
 #include <unistd.h>
-#include <assert.h>
 
 #define JNI_METHOD_SIZE 132u
 
@@ -22,9 +20,11 @@ void MSHookFunction(void *symbol, void *replace, void **result);
 // java
 intptr_t JAVAHookFunction(JNIEnv *env, jclass clazz, const char *method, const char *signature,
 						  void *replace);
-jmethodID GetMethodID(JNIEnv *env, intptr_t backup, char buffer[JNI_METHOD_SIZE]);
+jmethodID GetMethodID(JNIEnv *env, intptr_t backup, void *buffer/* JNI_METHOD_SIZE */);
 // java internal
 intptr_t  SetNativeMethod(jmethodID origin);
+// force interpreter, art only
+void Deoptimize(jmethodID outer);
 
 #ifdef __cplusplus
 }
@@ -61,9 +61,7 @@ public:
 			void *fp;
 		}; 
 		f = my_func;
-		DEBUG_LOGI("redirecting %p to %p...", this->p, fp);
 		MSHookFunction(this->p, fp, &this->p);
-		DEBUG_LOGI("redirected, backup = %p...", this->p);
 	}
 	template<class... P> __always_inline auto invoke(P &&... args) {
 //		return this->r(std::forward<P>(args)...);
