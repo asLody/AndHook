@@ -7,12 +7,12 @@ import android.util.Pair;
 
 /**
  * @author rrrfff
- * @version 2.0.0
+ * @version 2.0.1
  *
  */
 public class AndHook {
 	static {
-		System.loadLibrary("andhook");
+		System.loadLibrary("AndHook");
 	}
 
 	public static final class HookHelper {
