@@ -1,5 +1,4 @@
-# JNI Hook
-Now, you can hook java method in C/C++ entirely, which can be very handy when working on application analysis or reverse engineering. Its technical principle is very simple: making the target java method to be native.  
-
-# Native Hook
-Based on substrate module currently, so not ARM64 support.   
+# Note
+Precompiled binaries is provided here.   
+~~It is highly recommended that you use Visual Studio 2017 or later if you want to compile them yourself~~.   
+The source code will be available to the public soon.   
