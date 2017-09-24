@@ -15,16 +15,16 @@
 extern "C" {
 #endif
 
-// native
-void MSHookFunction(void *symbol, void *replace, void **result);
-// java
-intptr_t JAVAHookFunction(JNIEnv *env, jclass clazz, const char *method, const char *signature,
-						  void *replace);
-jmethodID GetMethodID(JNIEnv *env, intptr_t backup, void *buffer/* JNI_METHOD_SIZE */);
-// java internal
-intptr_t  SetNativeMethod(jmethodID origin);
-// force interpreter, art only
-void Deoptimize(jmethodID outer);
+	// native
+	void MSHookFunction(void *symbol, void *replace, void **result);
+	// java
+	intptr_t JAVAHookFunction(JNIEnv *env, jclass clazz, const char *method, const char *signature,
+							  void *replace);
+	jmethodID GetMethodID(JNIEnv *env, intptr_t backup, void *buffer/* JNI_METHOD_SIZE */);
+	// java internal
+	intptr_t  SetNativeMethod(jmethodID origin);
+	// force interpreter, art only
+	void Deoptimize(jmethodID outer);
 
 #ifdef __cplusplus
 }
