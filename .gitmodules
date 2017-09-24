@@ -1,3 +1,0 @@
-[submodule "jni\\utils\\And64InlineHook"]
-	path = jni\\utils\\And64InlineHook
-	url = git://github.com/rrrfff/And64InlineHook.git
