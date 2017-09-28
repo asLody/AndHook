@@ -7,24 +7,25 @@ import android.os.Bundle;
 import android.provider.Settings.Secure;
 import android.util.Log;
 import apk.andhook.AndHook.HookHelper;
+import apk.andhook.AndHook.HookHelper.Hook;
 
 public class AndTest {
-	void onCreate(final Bundle savedInstanceState) {
+
+	@Hook(clazz = android.app.Activity.class)
+	public void onCreate(final Bundle savedInstanceState) {
 		Log.i(this.getClass().toString(), "Activity::onCreate start");
 		HookHelper.callVoidOrigin(this, savedInstanceState);
 		Log.i(this.getClass().toString(), "Activity::onCreate end");
 	}
 
-	private static void testHookActivity_onCreate() {
-		try {
-			final Method m1 = android.app.Activity.class.getDeclaredMethod(
-					"onCreate", Bundle.class);
-			final Method m2 = AndTest.class.getDeclaredMethod("onCreate",
-					Bundle.class);
-			HookHelper.hook(m1, m2);
-		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
-		}
+	@Hook(clazz = Secure.class)
+	public static String getString(final ContentResolver resolver,
+			final String name) {
+		Log.i(AndTest.class.toString(), "hit name = " + name);
+		if (name == Secure.ANDROID_ID)
+			return "8888888888888888";
+		return (String) HookHelper.callStaticObjectOrigin(Secure.class,
+				resolver, name);
 	}
 
 	private static void testHookStaticMethodFromDifferentClass() {
@@ -128,35 +129,14 @@ public class AndTest {
 		}
 	}
 
-	public static String getString(final ContentResolver resolver,
-			final String name) {
-		Log.i(AndTest.class.toString(), "hit name = " + name);
-		return (String) HookHelper.callStaticObjectOrigin(Secure.class,
-				resolver, name);
-	}
-
-	private static void testHookSystemStaticMethod() {
-		final String target = "getString";
-		try {
-			final Method origin = Secure.class.getDeclaredMethod(target,
-					ContentResolver.class, String.class);
-			final Method fake = AndTest.class.getDeclaredMethod(target,
-					ContentResolver.class, String.class);
-			HookHelper.hook(origin, fake);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
 	public static void RunTest(final android.content.Context context,
 			final android.content.ContentResolver resolver) {
-		testHookActivity_onCreate();
 		testHookStaticMethodFromDifferentClass();
 		testHookStaticMethod();
 		testHookMethod();
 
-		Log.i("SecureHook", Secure.getString(resolver, Secure.ANDROID_ID));
-		testHookSystemStaticMethod();
-		Log.i("SecureHook", Secure.getString(resolver, Secure.ANDROID_ID));
+		Log.i("ANDROID_ID", Secure.getString(resolver, Secure.ANDROID_ID));
+		HookHelper.applyHooks(AndTest.class, context.getClassLoader());
+		Log.i("ANDROID_ID_FAKE", Secure.getString(resolver, Secure.ANDROID_ID));
 	}
 }
