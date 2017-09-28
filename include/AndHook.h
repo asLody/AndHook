@@ -1,6 +1,7 @@
 /*
  *
  *	@author : rrrfff@foxmail.com
+ *  @date   : 2017/09/27
  *  https://github.com/rrrfff/AndHook
  *
  */
@@ -9,22 +10,55 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#define ANDROID_RUNTIME ((const char *)-1)
 #define JNI_METHOD_SIZE 132u
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-	// native
-	void MSHookFunction(void *symbol, void *replace, void **result);
-	// java
-	intptr_t JAVAHookFunction(JNIEnv *env, jclass clazz, const char *method, const char *signature,
-							  void *replace);
+	/// <summary>
+	/// Gets handle to specified module or NULL if the target is not currently loaded
+	/// </summary>
+	const void *MSGetImageByName(const char *name/* = ANDROID_RUNTIME*/);
+	/// <summary>
+	/// Gets the addresses of defined symbols or NULL
+	/// </summary>
+	void *MSFindSymbol(const void *handle, const char *symbol);
+	/// <summary>
+	/// Releases internal memory without affecting the module state
+	/// </summary>
+	void MSCloseImage(const void *handle);
+	/// <summary>
+	/// Intercepts native methods
+	/// </summary>
+	void MSHookFunction(void *symbol, void *replace, void **result/* = NULL*/);
+	/// <summary>
+	/// Intercepts java methods using native code
+	/// </summary>
+	void MSJavaHookMethod(JNIEnv *env, jclass clazz, const char *method, const char *signature,
+						  void *replace, intptr_t *result/* = NULL*/);
+	/// <summary>
+	/// Intercepts java methods using native code 
+	/// </summary>
+	void MSJavaHookMethodV(JNIEnv *env, jclass clazz, jmethodID methodId, const char *method, const char *signature,
+						   void *replace, intptr_t *result/* = NULL*/);
+	/// <summary>
+	/// Gets the underlying jmethodID which can be used to call original function
+	/// </summary>
 	jmethodID GetMethodID(JNIEnv *env, intptr_t backup, void *buffer/* JNI_METHOD_SIZE */);
-	// java internal
-	intptr_t  SetNativeMethod(jmethodID origin);
-	// force interpreter, art only
-	void Deoptimize(jmethodID outer);
+	/// <summary>
+	/// Marks the specified java method as native and returns backup-slot index
+	/// </summary>
+	intptr_t SetNativeMethod(jmethodID origin, intptr_t should_backup);
+	/// <summary>
+	/// Forces the specified java method to be executed in the interpreter [ART only]
+	/// </summary>
+	void DeoptimizeMethod(jmethodID method);
+	/// <summary>
+	/// Dumps all the virtual and direct methods of the specified class [Dalvik only]
+	/// </summary>
+	void DumpClassMethods(JNIEnv *env, jclass clazz/* = NULL*/, const char *clsname/* = NULL*/);
 
 #ifdef __cplusplus
 }

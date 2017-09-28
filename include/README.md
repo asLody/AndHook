@@ -16,12 +16,10 @@ static jstring JNICALL my_getString(JNIEnv *env, jclass obj, jobject resolver, j
 		return env->NewStringUTF("fakeandroidid");
 	} //if
 
-	jstring js = reinterpret_cast<jstring>(env->CallStaticObjectMethod(obj, 
-																	   GetMethodID(env, sys_getString, alloca(JNI_METHOD_SIZE)),
-																	   resolver, name));
+	jmethodID jm = GetMethodID(env, sys_getString, alloca(JNI_METHOD_SIZE));
+	jstring   js = reinterpret_cast<jstring>(env->CallStaticObjectMethod(obj, jm, resolver, name));
 	if (js != NULL) {
-		__android_log_print(ANDROID_LOG_INFO, __FUNCTION__, 
-							"js = %s", env->GetStringUTFChars(js, NULL));
+		__android_log_print(ANDROID_LOG_INFO, __FUNCTION__, "%s", env->GetStringUTFChars(js, NULL));
 	} //if
 	return js;
 }
@@ -30,9 +28,9 @@ static jstring JNICALL my_getString(JNIEnv *env, jclass obj, jobject resolver, j
 
 void hook_test(JNIEnv *env)
 {
-	sys_getString = JAVAHookFunction(env, env->FindClass("android/provider/Settings$Secure"), "getString", 
-									 "(Landroid/content/ContentResolver;Ljava/lang/String;)Ljava/lang/String;",
-									 reinterpret_cast<void *>(my_getString));
+	jclass clazz    = env->FindClass("android/provider/Settings$Secure");
+	const char *sig = "(Landroid/content/ContentResolver;Ljava/lang/String;)Ljava/lang/String;";
+	MSJavaHookMethod(env, clazz, "getString", sig, reinterpret_cast<void *>(my_getString), &sys_getString);
 }
 ```
 
@@ -48,7 +46,7 @@ static int(*sys_access)(const char *pathname, int mode);
 static int my_access(const char *pathname, int mode)
 {
 	if (strstr(pathname, "/system/bin/su") != NULL ||
-		strstr(pathname, "/system/xbin/su") != NULL) {
+	    strstr(pathname, "/system/xbin/su") != NULL) {
 		return -1;
 	} //if
 
