@@ -2,7 +2,7 @@
 AndHook is a lightweight hook framework for android, which supports both dalvik and art environment. It is primarily written in C++ and easy to use.  
 
 # Documentation
-A Chinese Manual is available [here](tree/master/docs).   
+A Chinese Manual is available [here](https://github.com/rrrfff/AndHook/tree/master/docs).   
 
 # Support
 Android 4.x or later (including Android O), most of the ROMs and devices (armeabi-v7a, arm64-v8a, x86, x86_64).
