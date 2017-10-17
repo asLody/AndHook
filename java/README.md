@@ -33,7 +33,7 @@ Just put AndHook.java and binaries (*.so files) into proper directories, and do 
 	AndHook.invokeXXXMethod(slot, ...);
 	// Or, you can use HookHelper, which saves the slot automatically for you.
 ```
-For concrete usage, please see [AndTest.java](https://raw.githubusercontent.com/rrrfff/AndHook/master/test/app/src/main/java/apk/andhook/testAndTest.java)
+For concrete usage, please see [AndTest.java](https://raw.githubusercontent.com/rrrfff/AndHook/master/test/app/src/main/java/apk/andhook/test/AndTest.java)
 
 # Reference
 [《Android热修复升级探索——追寻极致的代码热替换》](https://yq.aliyun.com/articles/74598)    
