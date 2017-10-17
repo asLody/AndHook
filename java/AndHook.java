@@ -1,12 +1,16 @@
-package apk.andhook;
+package andhook.lib;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
+
+import android.os.Build;
 import android.util.Pair;
 
 /**
  * @author rrrfff
- * @version 2.1.0
+ * @version 2.2.0
  *
  */
 public class AndHook {
@@ -15,14 +19,43 @@ public class AndHook {
 	}
 
 	public static final class HookHelper {
+		private static final Method getSignature = init();
 		private static final ConcurrentHashMap<Pair<String, String>, Integer> sBackups = new ConcurrentHashMap<>();
 
+		private static Method init() {
+			try {
+				final Method m = Constructor.class.getDeclaredMethod(
+						"getSignature", (Class<?>[]) null);
+				m.setAccessible(true);
+				return m;
+			} catch (NoSuchMethodException e) {
+				e.printStackTrace();
+			}
+			return null;
+		}
+
 		public static void hook(final Method origin, final Method replace) {
-			final Pair<String, String> origin_key = Pair.create(origin
-					.getDeclaringClass().getName(), origin.getName());
+			final int slot = AndHook.hook(origin, replace);
+			if (slot >= 0) {
+				saveBackupSlot(slot, origin.getDeclaringClass(),
+						origin.getName(), replace);
+			}
+		}
+
+		public static void hook(final Class<?> clazz, final String name,
+				final String signature, final Method replace) {
+			final int slot = AndHook.hook(clazz, name, signature, replace);
+			if (slot >= 0) {
+				saveBackupSlot(slot, clazz, name, replace);
+			}
+		}
+
+		private static void saveBackupSlot(final Integer slot,
+				final Class<?> clazz, final String name, final Method replace) {
+			final Pair<String, String> origin_key = Pair.create(
+					clazz.getName(), name);
 			final Pair<String, String> target_key = Pair.create(replace
 					.getDeclaringClass().getName(), replace.getName());
-			final Integer slot = AndHook.hook(origin, replace);
 			if (sBackups.containsKey(origin_key)
 					|| sBackups.containsKey(target_key)) {
 				android.util.Log.e(AndHook.class.toString(),
@@ -30,6 +63,17 @@ public class AndHook {
 			}
 			sBackups.put(origin_key, slot);
 			sBackups.put(target_key, slot);
+			if (Build.VERSION.SDK_INT <= 20
+					&& !origin_key.first.equals(target_key.first)
+					&& !name.equals(target_key.second)) {
+				final Pair<String, String> special_key = Pair.create(
+						target_key.first, name);
+				if (sBackups.containsKey(special_key)) {
+					android.util.Log.e(AndHook.class.toString(),
+							"duplicate special key error!");
+				}
+				sBackups.put(special_key, slot);
+			}
 		}
 
 		private static int getBackupSlot() {
@@ -152,6 +196,23 @@ public class AndHook {
 			}
 		}
 
+		private static String asConstructor(final Class<?> clazz,
+				final String method, final Class<?>[] parameterTypes) {
+			final String clsname = clazz.getName();
+			if (!method.equals("<init>") && !clsname.endsWith("." + method)
+					&& !clsname.endsWith("$" + method))
+				return null;
+
+			try {
+				return (String) getSignature.invoke(clazz
+						.getConstructor(parameterTypes));
+			} catch (IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException | NoSuchMethodException e) {
+				e.printStackTrace();
+			}
+			return null;
+		}
+
 		/**
 		 * @thanks TIIEHenry
 		 */
@@ -168,6 +229,7 @@ public class AndHook {
 		public static void applyHooks(Class<?> holdClass,
 				final ClassLoader loader) {
 			AndHook.ensureClassInitialized(holdClass);
+			AndHook.suspendAll();
 			for (final Method hookMethod : holdClass.getDeclaredMethods()) {
 				final Hook hook = hookMethod.getAnnotation(Hook.class);
 				if (hook != null) {
@@ -180,20 +242,31 @@ public class AndHook {
 					try {
 						if (clazz == Hook.class)
 							clazz = loader.loadClass(hook.value());
-						origin = clazz.getDeclaredMethod(name,
-								hookMethod.getParameterTypes());
+						final Class<?>[] parameterTypes = hookMethod
+								.getParameterTypes();
+						final String sig = asConstructor(clazz, name,
+								parameterTypes);
+						if (sig != null) {
+							// AndHook.ensureClassInitialized(hook.clazz());
+							hook(clazz, "<init>", sig, hookMethod);
+						} else {
+							origin = clazz.getDeclaredMethod(name,
+									parameterTypes);
+							if (origin != null) {
+								AndHook.ensureClassInitialized(hook.clazz());
+								hook(origin, hookMethod);
+							}
+						}
 					} catch (final Exception e) {
 						e.printStackTrace();
 					}
-					if (origin != null) {
-						AndHook.ensureClassInitialized(hook.clazz());
-						hook(origin, hookMethod);
-					}
 				}
 			}
+			AndHook.resumeAll();
 		}
 	}
 
+	@Deprecated
 	public static native void replaceMethod(final Method origin,
 			final Method replace);
 
@@ -202,7 +275,19 @@ public class AndHook {
 	public static native void hookNoBackup(final Method origin,
 			final Method replace);
 
+	public static native int hook(final Class<?> clazz, final String name,
+			final String signature, final Method replace);
+
+	public static native void hookNoBackup(final Class<?> clazz,
+			final String name, final String signature, final Method replace);
+
+	public static native boolean suspendAll();
+
+	public static native void resumeAll();
+
 	public static native void ensureClassInitialized(final Class<?> origin);
+	
+	public static native void enableFastDexLoad(final boolean enable);
 
 	public static native void deoptimizeMethod(final Method target);
 
@@ -391,12 +476,6 @@ public class AndHook {
 
 	public static native Object invokeMethod(final int slot,
 			final Object receiver, final Object... params);
-
-	protected static final class Native {
-		private static native void a();
-
-		private static native void b();
-	}
 
 	private static final class DalvikHook {
 		public static native void invokeVoidMethod(final int slot,
