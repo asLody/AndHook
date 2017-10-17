@@ -1,5 +1,12 @@
-# Java Method Replacement
-Similar to AndFix/Legend, AndHook's `Java Method Replacement` is based on underlying ArtMethod replacement, but goes further (may not stable enough).  
+# Support
+- direct methods (static, private and constructor)
+- virtual methods (non-static public and protected)
+- java annotation @Hook
+
+# Limits
+- some special methods cannot be hooked, e.g. abstract methods
+- methods with different signature is unstable (reflection may failed due to mismatched method name)
+- fields hook not supported
 
 # Structure
 AndHook consists of only one java file (AndHook.java) and binaries for specified architectures, no other dependencies.  
@@ -7,16 +14,12 @@ AndHook consists of only one java file (AndHook.java) and binaries for specified
 
 # Usage
 Just put AndHook.java and binaries (*.so files) into proper directories, and do what you want. You don't need to compile jni code yourself as precompiled binaries is provided.
-- Firstly, make sure that all the classes involved are initialized, e.g. non-system classes, otherwise, a deadlock could occur. In addition, remember that the dynamically loaded classes may also be collected by GC since Android N. A simple workaround is to keep global reference(NewGlobalRef) of them.
+- makes sure that all the classes involved are initialized, e.g. non-system classes, otherwise, a deadlock could occur. In addition, remember that the dynamically loaded classes may also be collected by GC since Android N. A simple workaround is to keep global reference(NewGlobalRef) of them.
 ```java
 	AndHook.ensureClassInitialized(A.class);
 	AndHook.ensureClassInitialized(B.class);
 ```
-- simply replaces a method (compatible with all Android version, but may encounter some issues such as NoSuchMethodError. `You should try this first to see if it meets your requirements`):
-```java
-	AndHook.replaceMethod(final Method origin, final Method replacement);
-```
-- replaces a method and applys workaround for known issues mentioned above (with limited self-adapting capabilities, needs more tests):
+- simply replaces a method without backup:
 ```java
 	AndHook.hookNoBackup(final Method origin, final Method replacement);
 ```
@@ -30,7 +33,7 @@ Just put AndHook.java and binaries (*.so files) into proper directories, and do 
 	AndHook.invokeXXXMethod(slot, ...);
 	// Or, you can use HookHelper, which saves the slot automatically for you.
 ```
-For concrete usage, please see [AndTest.java](https://raw.githubusercontent.com/rrrfff/AndHook/master/java/test/src/apk/andhook/test/AndTest.java)
+For concrete usage, please see [AndTest.java](https://raw.githubusercontent.com/rrrfff/AndHook/master/test/app/src/main/java/apk/andhook/testAndTest.java)
 
 # Reference
 [《Android热修复升级探索——追寻极致的代码热替换》](https://yq.aliyun.com/articles/74598)    

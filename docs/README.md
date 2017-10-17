@@ -8,7 +8,7 @@ AndHook设计初衷是解决项目运行过程中遇到的一些实际问题，�
 - 保证原始方法和替换方法的方法类型(virtual和direct)、返回值类型、参数类型一致，如果这些不一致，一般情况下都是会挂掉的。如果是JAVA方法替换，尽可能保证函数名称也是一致的，否则反射调用等情况下会出问题。  
 - 对于非static方法的HOOK(针对JAVA方法替换而言)，不建议在相应的替换方法里使用invoke-virtual等指令调用所属类的其它方法或字段。可以这么考虑，这时候this指针是类A，却被用去调用类B的东西。一种解决方案是将替换方法当成跳板，跳到到另一个类中的函数去处理。
 - 在Android N之后，要考虑类引用的情况，如果类未被任何引用则可能被GC回收。
-- 需要自行考虑线程安全问题，同进程间注入一样，尚未找到合适的解决方案。
+- ~~需要自行考虑线程安全问题，同进程间注入一样，尚未找到合适的解决方案。~~目前已实现实验性的线程安全方案，具体可见include/AndHook.h注释。
 
 # 如何使用
 AndHook所支持的三种HOOK方式都提供了尽可能简单的API，但是为了使用的方便也可能会有一些包装情况。
@@ -37,9 +37,9 @@ AndHook所支持的三种HOOK方式都提供了尽可能简单的API，但是为
 	void MSJavaHookMethod(JNIEnv *env, jclass clazz, const char *method, const char *signature,
                           void *replace, intptr_t *result/* = NULL*/);
     ```
-    最后一个参数result用来保存原始函数的备份索引，如果不需要，传入NULL即可，此时将无法调回原函数。该方法实际上是对`SetNativeMethod`的包装。*result可用于传入下列函数得到jmethodID
+    最后一个参数result用来保存原始函数的备份索引，如果不需要，传入NULL即可，此时将无法调回原函数。该方法实际上是对`MSForceNativeMethod`的包装。*result可用于传入下列函数得到jmethodID
     ```c++
-	jmethodID GetMethodID(JNIEnv *env, intptr_t backup, void *buffer/* JNI_METHOD_SIZE */);
+	jmethodID MSGetMethodID(JNIEnv *env, intptr_t backup, void *buffer/* JNI_METHOD_SIZE */);
     ```
     注意此处返回的jmethodID不应该被缓存，因为执行Moving GC后某些方法字段可能失效；此外GetMethodID并不发生查找操作，性能代价极小。参数buffer用于传入至少JNI_METHOD_SIZE字节大小并对齐的缓存区，可以使用alloca函数分配栈内存(不能假设返回的jmethodID就是buffer，在部分安卓版本下会忽略buffer而改用内部申请的内存区域)。
 - 在C/C++代码中拦截NATIVE方法，底层实现是Inline Hook，除了部分特殊短函数外基本都能拦截。目前AndHook基于Cydia Substrate和And64InlineHook，仅支持主流CPU架构。
@@ -56,7 +56,7 @@ AndHook所支持的三种HOOK方式都提供了尽可能简单的API，但是为
     `MSCloseImage`仅用于释放内部内存，不影响模块，参数handle允许传入NULL。   
     `MSFindSymbol`用于寻找特定符号，如果handle为NULL或者符号不存在则返回NULL。
 - 具体使用而言，JAVA层只需将java/AndHook.java以及jniLibs/*.so放到工程下特定目录(保持包名结构)即可；   
-NATIVE层使用略麻烦，头文件include/AndHook.h，静态链接的话需要把相应架构的libAndHook.so添加到链接器的库依赖项，同时需要注意so加载顺序；或者在so里面动态加载libAndHook.so也行。
+NATIVE层使用首次配置会略麻烦，可以参考test工程。首先引用头文件include/AndHook.h；接着静态链接的话需要把相应架构的libAndHook.so添加到链接器的库依赖项，同时要注意so加载顺序；或者在so里面动态加载libAndHook.so也行。
 
 # 写在最后
 AndHook使用者也不多，很多问题未能及时发现和修复，但还是决定把这份Manual写出来，其中有些东西不仅仅是针对AndHook的，同样适用于其它框架，希望有所帮助~   
