@@ -138,7 +138,17 @@ public class AndTest {
 
 	@SuppressWarnings("HardwareIds")
 	public static void RunTest(final ContextWrapper context,
-			final ContentResolver resolver) {
+			final ContentResolver resolver) {		
+		// libAndHook.so must be loaded before libmyjnihook.so
+		AndHook.ensureNativeLibraryLoaded();
+		
+		Log.i("RunTest", "\nhook in C/C++...");
+		try {
+			System.loadLibrary("myjnihook");
+		} catch (final UnsatisfiedLinkError e) {
+			Log.w("RunTest", "failed to load myjnihook!");
+		}
+		
 		Log.i("RunTest", "\nhook using base AndHook api...");
 		AndHook.suspendAll();
 		testHookStaticMethodFromDifferentClass();
@@ -162,16 +172,7 @@ public class AndTest {
 				HookHelper.findMethod(Virtual2.class, "getUserId", (Class<?>[]) null));
 		// test post call
 		(new Virtual1()).getUserId();
-
-		Log.i("RunTest", "\nhook in C/C++...");
-		// libAndHook.so must be loaded before libmyjnihook.so
-		System.loadLibrary("AndHook");
-		try {
-			System.loadLibrary("myjnihook");
-		} catch (final UnsatisfiedLinkError e) {
-			Log.w("RunTest", "failed to load myjnihook!");
-		}
-
+		
 		Log.i("RunTest", "\nhook test done.\n");
 	}
 }

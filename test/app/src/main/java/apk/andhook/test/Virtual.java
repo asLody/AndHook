@@ -20,8 +20,7 @@ public final class Virtual {
 	
 	public static class Virtual2 extends Virtual1 {
 		// we cannot simply replace virtual methods unless they have the same
-		// method_index_;
-		// however, @Override ensures that
+		// method_index_ and we patch reflection mechanism for them.
 		@Override
 		public int getUserId() {
 			Log.i(this.getClass().toString(), "faked Virtual1 getUserId hit!");

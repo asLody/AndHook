@@ -2,6 +2,7 @@
 - direct methods (static, private and constructor)
 - virtual methods (non-static public and protected)
 - java annotation @Hook
+- reflection call
 
 # Limits
 - some special methods cannot be hooked, e.g. abstract methods
