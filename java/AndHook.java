@@ -1,6 +1,7 @@
 package andhook.lib;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -17,216 +18,11 @@ public class AndHook {
 	private final static String LOG_TAG = "AndHook";
 
 	static {
-		System.loadLibrary("AndHook");
+		ensureNativeLibraryLoaded();
 	}
 
-	public static final class HookHelper {
-		private static final ConcurrentHashMap<Pair<String, String>, Integer> sBackups = new ConcurrentHashMap<>();
-		private static Method getSignature = null;
-		static {
-			try {
-				getSignature = Constructor.class.getDeclaredMethod(
-						"getSignature", (Class<?>[]) null);
-				getSignature.setAccessible(true);
-			} catch (NoSuchMethodException e) {
-				Log.e(AndHook.LOG_TAG, e.getMessage(), e);
-			}
-		}
-
-		public static void hook(final Method origin, final Method replace) {
-			final int slot = AndHook.hook(origin, replace);
-			if (slot >= 0) {
-				saveBackupSlot(slot, origin.getDeclaringClass(),
-						origin.getName(), replace);
-			}
-		}
-
-		public static void hook(final Class<?> clazz, final String name,
-				final String signature, final Method replace) {
-			final int slot = AndHook.hook(clazz, name, signature, replace);
-			if (slot >= 0) {
-				saveBackupSlot(slot, clazz, name, replace);
-			}
-		}
-
-		private static void saveBackupSlot(final Integer slot,
-				final Class<?> clazz, final String name, final Method replace) {
-			// a simple workaround for overloaded methods
-			final String identifier = replace.getParameterTypes().length + "";
-			// ugly solution
-			final Pair<String, String> origin_key = Pair.create(
-					clazz.getName(), name + identifier);
-			final Pair<String, String> target_key = Pair.create(replace
-					.getDeclaringClass().getName(), replace.getName()
-					+ identifier);
-			if (sBackups.containsKey(origin_key)
-					|| sBackups.containsKey(target_key)) {
-				Log.e(AndHook.LOG_TAG, "duplicate key error!");
-			}
-			sBackups.put(origin_key, slot);
-			sBackups.put(target_key, slot);
-			if (Build.VERSION.SDK_INT <= 20
-					&& !origin_key.first.equals(target_key.first)
-					&& !origin_key.second.equals(target_key.second)) {
-				final Pair<String, String> special_key = Pair.create(
-						target_key.first, origin_key.second);
-				if (sBackups.containsKey(special_key)) {
-					Log.e(AndHook.LOG_TAG, "duplicate key error!");
-				}
-				sBackups.put(special_key, slot);
-			}
-		}
-
-		private static int getBackupSlot(final int identifier) {
-			final StackTraceElement currentStack = Thread.currentThread()
-					.getStackTrace()[4];
-			return sBackups.get(Pair.create(currentStack.getClassName(),
-					currentStack.getMethodName() + identifier));
-		}
-
-		public static void invokeVoidOrigin(final Object receiver,
-				final Object... params) {
-			AndHook.invokeVoidMethod(getBackupSlot(params.length), receiver,
-					params);
-		}
-
-		public static boolean invokeBooleanOrigin(final Object receiver,
-				final Object... params) {
-			return AndHook.invokeBooleanMethod(getBackupSlot(params.length),
-					receiver, params);
-		}
-
-		public static byte invokeByteOrigin(final Object receiver,
-				final Object... params) {
-			return AndHook.invokeByteMethod(getBackupSlot(params.length),
-					receiver, params);
-		}
-
-		public static short invokeShortOrigin(final Object receiver,
-				final Object... params) {
-			return AndHook.invokeShortMethod(getBackupSlot(params.length),
-					receiver, params);
-		}
-
-		public static char invokeCharOrigin(final Object receiver,
-				final Object... params) {
-			return AndHook.invokeCharMethod(getBackupSlot(params.length),
-					receiver, params);
-		}
-
-		public static int invokeIntOrigin(final Object receiver,
-				final Object... params) {
-			return AndHook.invokeIntMethod(getBackupSlot(params.length),
-					receiver, params);
-		}
-
-		public static long invokeLongOrigin(final Object receiver,
-				final Object... params) {
-			return AndHook.invokeLongMethod(getBackupSlot(params.length),
-					receiver, params);
-		}
-
-		public static float invokeFloatOrigin(final Object receiver,
-				final Object... params) {
-			return AndHook.invokeFloatMethod(getBackupSlot(params.length),
-					receiver, params);
-		}
-
-		public static double invokeDoubleOrigin(final Object receiver,
-				final Object... params) {
-			return AndHook.invokeDoubleMethod(getBackupSlot(params.length),
-					receiver, params);
-		}
-
-		public static Object invokeObjectOrigin(final Object receiver,
-				final Object... params) {
-			return AndHook.invokeObjectMethod(getBackupSlot(params.length),
-					receiver, params);
-		}
-
-		public static Method findMethod(final Class<?> clazz,
-				final String name, final Class<?>... parameterTypes) {
-			Method m = null;
-			try {
-				m = clazz.getDeclaredMethod(name, parameterTypes);
-			} catch (final NoSuchMethodException e) {
-			}
-			if (m == null) {
-				try {
-					m = clazz.getMethod(name, parameterTypes);
-				} catch (final NoSuchMethodException e) {
-				}
-			}
-			if (m == null)
-				Log.e(AndHook.LOG_TAG, "failed to find method " + name);
-			return m;
-		}
-
-		@SuppressWarnings("ConstantConditions")
-		private static String asConstructor(final Class<?> clazz,
-				final String method, final Class<?>[] parameterTypes) {
-			final String clsname = clazz.getName();
-			if (!method.equals("<init>") && !clsname.endsWith("." + method)
-					&& !clsname.endsWith("$" + method))
-				return null;
-
-			try {
-				return (String) getSignature.invoke(clazz
-						.getConstructor(parameterTypes));
-			} catch (final Exception e) {
-				android.util.Log.e(AndHook.class.toString(),
-						"failed to get signature of constructor!", e);
-			}
-			return null;
-		}
-
-		@java.lang.annotation.Target(java.lang.annotation.ElementType.METHOD)
-		@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
-		public @interface Hook {
-			String value() default ""; // class name
-
-			Class<?> clazz() default Hook.class; // class
-
-			String name() default ""; // method name
-		}
-
-		public static void applyHooks(final Class<?> holdClass,
-				final ClassLoader loader) {
-			AndHook.ensureClassInitialized(holdClass);
-			AndHook.suspendAll();
-			for (final Method hookMethod : holdClass.getDeclaredMethods()) {
-				final Hook hook = hookMethod.getAnnotation(Hook.class);
-				if (hook != null) {
-					String name = hook.name();
-					if (name.isEmpty())
-						name = hookMethod.getName();
-
-					Class<?> clazz = hook.clazz();
-					Method origin;
-					try {
-						if (clazz == Hook.class)
-							clazz = loader.loadClass(hook.value());
-						final Class<?>[] parameterTypes = hookMethod
-								.getParameterTypes();
-						final String sig = asConstructor(clazz, name,
-								parameterTypes);
-						if (sig != null) {
-							// AndHook.ensureClassInitialized(hook.clazz());
-							hook(clazz, "<init>", sig, hookMethod);
-						} else {
-							origin = findMethod(clazz, name, parameterTypes);
-							if (origin != null) {
-								AndHook.ensureClassInitialized(hook.clazz());
-								hook(origin, hookMethod);
-							}
-						}
-					} catch (final Exception e) {
-						e.printStackTrace();
-					}
-				}
-			}
-			AndHook.resumeAll();
-		}
+	public static void ensureNativeLibraryLoaded() {
+		System.loadLibrary("AndHook");
 	}
 
 	@Deprecated
@@ -353,6 +149,245 @@ public class AndHook {
 
 	private static native Object invokeMethod(final int slot,
 			final Object receiver, final Object... params);
+
+	public static final class HookHelper {
+		private static final ConcurrentHashMap<Pair<String, String>, Integer> sBackups = new ConcurrentHashMap<>();
+		private static Method getSignature = null;
+		static {
+			try {
+				if (Build.VERSION.SDK_INT <= 25) {
+					getSignature = Constructor.class.getDeclaredMethod(
+							"getSignature", (Class<?>[]) null);
+				} else {
+					final Class<?> clazz = ClassLoader.getSystemClassLoader()
+							.loadClass("libcore.reflect.Types");
+					getSignature = clazz.getDeclaredMethod("getSignature",
+							Class.class);
+				}
+				getSignature.setAccessible(true);
+			} catch (final Exception e) {
+				Log.e(AndHook.LOG_TAG, e.getMessage(), e);
+			}
+		}
+
+		public static void hook(final Method origin, final Method replace) {
+			final Class<?> cls0 = origin.getDeclaringClass();
+			final String name0 = origin.getName();
+			final Class<?> cls1 = replace.getDeclaringClass();
+			final String name1 = replace.getName();
+			final int slot = AndHook.hook(origin, replace);
+			if (slot >= 0) {
+				saveBackupSlot(slot, cls0, name0, cls1, name1, replace);
+			}
+		}
+
+		public static void hook(final Class<?> clazz, final String name,
+				final String signature, final Method replace) {
+			final Class<?> cls1 = replace.getDeclaringClass();
+			final String name1 = replace.getName();
+			final int slot = AndHook.hook(clazz, name, signature, replace);
+			if (slot >= 0) {
+				saveBackupSlot(slot, clazz, name, cls1, name1, replace);
+			}
+		}
+
+		private static void saveBackupSlot(final Integer slot,
+				final Class<?> cls0, final String name0, final Class<?> cls1,
+				final String name1, final Method md) {
+			// a simple workaround for overloaded methods
+			final String identifier = md.getParameterTypes().length + "";
+			// ugly solution
+			final Pair<String, String> origin_key = Pair.create(cls0.getName(),
+					name0 + identifier);
+			final Pair<String, String> target_key = Pair.create(cls1.getName(),
+					name1 + identifier);
+			if (sBackups.containsKey(origin_key)
+					|| sBackups.containsKey(target_key)) {
+				Log.e(AndHook.LOG_TAG, "duplicate key error!");
+			}
+			sBackups.put(origin_key, slot);
+			sBackups.put(target_key, slot);
+			if (Build.VERSION.SDK_INT <= 20
+					&& !origin_key.first.equals(target_key.first)
+					&& !origin_key.second.equals(target_key.second)) {
+				final Pair<String, String> special_key = Pair.create(
+						target_key.first, origin_key.second);
+				if (sBackups.containsKey(special_key)) {
+					Log.e(AndHook.LOG_TAG, "duplicate key error!");
+				}
+				sBackups.put(special_key, slot);
+			}
+		}
+
+		private static int getBackupSlot(final int identifier) {
+			final StackTraceElement stack = Thread.currentThread()
+					.getStackTrace()[4];
+			final Integer slot = sBackups.get(Pair.create(stack.getClassName(),
+					stack.getMethodName() + identifier));
+			if (slot == null) {
+				Log.e(LOG_TAG, "no backup found for " + stack.getClassName()
+						+ "@" + stack.getMethodName() + "@" + identifier);
+				return -1;
+			}
+			return slot;
+		}
+
+		public static void invokeVoidOrigin(final Object receiver,
+				final Object... params) {
+			AndHook.invokeVoidMethod(getBackupSlot(params.length), receiver,
+					params);
+		}
+
+		public static boolean invokeBooleanOrigin(final Object receiver,
+				final Object... params) {
+			return AndHook.invokeBooleanMethod(getBackupSlot(params.length),
+					receiver, params);
+		}
+
+		public static byte invokeByteOrigin(final Object receiver,
+				final Object... params) {
+			return AndHook.invokeByteMethod(getBackupSlot(params.length),
+					receiver, params);
+		}
+
+		public static short invokeShortOrigin(final Object receiver,
+				final Object... params) {
+			return AndHook.invokeShortMethod(getBackupSlot(params.length),
+					receiver, params);
+		}
+
+		public static char invokeCharOrigin(final Object receiver,
+				final Object... params) {
+			return AndHook.invokeCharMethod(getBackupSlot(params.length),
+					receiver, params);
+		}
+
+		public static int invokeIntOrigin(final Object receiver,
+				final Object... params) {
+			return AndHook.invokeIntMethod(getBackupSlot(params.length),
+					receiver, params);
+		}
+
+		public static long invokeLongOrigin(final Object receiver,
+				final Object... params) {
+			return AndHook.invokeLongMethod(getBackupSlot(params.length),
+					receiver, params);
+		}
+
+		public static float invokeFloatOrigin(final Object receiver,
+				final Object... params) {
+			return AndHook.invokeFloatMethod(getBackupSlot(params.length),
+					receiver, params);
+		}
+
+		public static double invokeDoubleOrigin(final Object receiver,
+				final Object... params) {
+			return AndHook.invokeDoubleMethod(getBackupSlot(params.length),
+					receiver, params);
+		}
+
+		public static Object invokeObjectOrigin(final Object receiver,
+				final Object... params) {
+			return AndHook.invokeObjectMethod(getBackupSlot(params.length),
+					receiver, params);
+		}
+
+		public static Method findMethod(final Class<?> clazz,
+				final String name, final Class<?>... parameterTypes) {
+			Method m = null;
+			try {
+				m = clazz.getDeclaredMethod(name, parameterTypes);
+			} catch (final NoSuchMethodException e) {
+			}
+			if (m == null) {
+				try {
+					m = clazz.getMethod(name, parameterTypes);
+				} catch (final NoSuchMethodException e) {
+				}
+			}
+			if (m == null)
+				Log.e(AndHook.LOG_TAG, "failed to find method " + name);
+			return m;
+		}
+
+		@SuppressWarnings("ConstantConditions")
+		private static String asConstructor(final Class<?> clazz,
+				final String method, final Class<?>[] parameterTypes) {
+			final String clsname = clazz.getName();
+			if (!method.equals("<init>") && !clsname.endsWith("." + method)
+					&& !clsname.endsWith("$" + method))
+				return null;
+
+			try {
+				if (Build.VERSION.SDK_INT <= 25) {
+					return (String) getSignature.invoke(clazz
+							.getConstructor(parameterTypes));
+				} else {
+					final StringBuilder result = new StringBuilder();
+
+					result.append('(');
+					for (final Class<?> parameterType : parameterTypes) {
+						result.append(getSignature.invoke(null, parameterType));
+					}
+					result.append(")V");
+
+					return result.toString();
+				}
+			} catch (final Exception e) {
+				Log.e(AndHook.LOG_TAG,
+						"failed to get signature of constructor!", e);
+			}
+			return null;
+		}
+
+		@java.lang.annotation.Target(java.lang.annotation.ElementType.METHOD)
+		@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
+		public @interface Hook {
+			String value() default ""; // class name
+
+			Class<?> clazz() default Hook.class; // class
+
+			String name() default ""; // method name
+		}
+
+		public static void applyHooks(final Class<?> holdClass,
+				final ClassLoader loader) {
+			AndHook.ensureClassInitialized(holdClass);
+			AndHook.suspendAll();
+			for (final Method hookMethod : holdClass.getDeclaredMethods()) {
+				final Hook hook = hookMethod.getAnnotation(Hook.class);
+				if (hook != null) {
+					String name = hook.name();
+					if (name.isEmpty())
+						name = hookMethod.getName();
+
+					Class<?> clazz = hook.clazz();
+					Method origin;
+					try {
+						if (clazz == Hook.class)
+							clazz = loader.loadClass(hook.value());
+						final Class<?>[] parameterTypes = hookMethod
+								.getParameterTypes();
+						final String sig = asConstructor(clazz, name,
+								parameterTypes);
+						if (sig != null) {
+							// AndHook.ensureClassInitialized(hook.clazz());
+							hook(clazz, "<init>", sig, hookMethod);
+						} else {
+							origin = findMethod(clazz, name, parameterTypes);
+							if (origin != null) {
+								AndHook.ensureClassInitialized(clazz);
+								hook(origin, hookMethod);
+							}
+						}
+					} catch (final Exception e) {
+						Log.e(AndHook.LOG_TAG, e.getMessage(), e);
+					}
+				}
+			}
+			AndHook.resumeAll();
+		}
+	}
 
 	private static final class DalvikHook {
 		public static native void invokeVoidMethod(final int slot,
