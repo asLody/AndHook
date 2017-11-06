@@ -8,6 +8,7 @@
 - some special methods cannot be hooked, e.g. abstract methods
 - methods with different signature is unstable (reflection may failed due to mismatched method name)
 - fields hook not supported
+- incompatible with libhoudini
 
 # Structure
 AndHook consists of only one java file (AndHook.java) and binaries for specified architectures, no other dependencies.  

@@ -2,7 +2,7 @@
 AndHook is a lightweight hook framework for android. It is primarily written in C++ and easy to use.  
 
 # Support
-Android 4.x or later (with preliminary support for Android O), excluding customized Android ROMs such as YunOS.
+Android 4.x or later (with preliminary support for Android O, SDK 26), excluding customized Android ROMs such as YunOS.
 - java method replacement (hook java method in JAVA)
 - jni hook (hook java method in C/C++)
 - native hook (hook native method in C/C++)
