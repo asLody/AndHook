@@ -1,7 +1,7 @@
 /*
  *
  *  @author : rrrfff@foxmail.com
- *  @date   : 2017/10/21
+ *  @date   : 2017/11/18
  *  https://github.com/rrrfff/AndHook
  *
  */
@@ -22,7 +22,7 @@ extern "C" {
 	/// </summary>
 	const void *AKGetImageByName(const char *name/* = ANDROID_RUNTIME*/);
 	/// <summary>
-	/// Gets the addresses of defined symbols or NULL
+	/// Gets the address of defined symbols or NULL
 	/// </summary>
 	void *AKFindSymbol(const void *handle, const char *symbol);
 	/// <summary>
@@ -30,19 +30,23 @@ extern "C" {
 	/// </summary>
 	void AKCloseImage(const void *handle);
 	/// <summary>
-	/// Intercepts native methods
+	/// Intercepts native method
 	/// </summary>
 	void AKHookFunction(void *symbol, void *replace, void **result/* = NULL*/);
 	/// <summary>
-	/// Intercepts java methods using native code
+	/// Intercepts java method using native code
 	/// </summary>
 	void AKJavaHookMethod(JNIEnv *env, jclass clazz, const char *method, const char *signature,
 						  void *replace, intptr_t *result/* = NULL*/);
 	/// <summary>
-	/// Intercepts java methods using native code 
+	/// Intercepts java method using native code 
 	/// </summary>
 	void AKJavaHookMethodV(JNIEnv *env, jclass clazz, jmethodID methodId, const char *method, const char *signature,
 						   void *replace, intptr_t *result/* = NULL*/);
+	/// <summary>
+	/// Recovers java method
+	/// </summary>
+	bool AKRecoverMethod(intptr_t backup, jmethodID methodId);
 	/// <summary>
 	/// Gets the underlying jmethodID which can be used to call original function
 	/// </summary>
@@ -83,6 +87,10 @@ extern "C" {
 	/// Returns the absolute path to the application specific cache directory with trailing slash
 	/// </summary>
 	const char *AKGetCacheDirectory();
+	/// <summary>
+	/// Returns the absolute path to the application specific libs directory with trailing slash
+	/// </summary>
+	const char *AKGetNativeLibsDirectory();
 	/// <summary>
 	/// Enables or disables dex fast-loading mechanism [ART only]
 	/// </summary>
