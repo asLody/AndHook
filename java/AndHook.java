@@ -11,32 +11,41 @@ import android.util.Pair;
 
 /**
  * @author rrrfff
- * @version 2.5.0
+ * @version 2.6.0
  */
 @SuppressWarnings({"unused", "WeakerAccess", "JniMissingFunction"})
-public class AndHook {
+public final class AndHook {
     private final static String LOG_TAG = "AndHook";
 
     static {
-        ensureNativeLibraryLoaded();
+        try {
+            System.loadLibrary("AndHook");
+        } catch (final UnsatisfiedLinkError e0) {
+            try {
+                // compatible with libhoudini
+                System.loadLibrary("AndHookCompat");
+            } catch (final UnsatisfiedLinkError e1) {
+                // still failed, YunOS?
+                throw new UnsatisfiedLinkError("incompatible platform, " + e0.getMessage());
+            }
+        }
     }
 
     public static void ensureNativeLibraryLoaded() {
-        System.loadLibrary("AndHook");
+        final AndHook dummy = new AndHook();
     }
 
-    @Deprecated
-    public static native void replaceMethod(final Method origin,
-                                            final Method replace);
-
     public static native int hook(final Method origin, final Method replace);
-
-    public static native void hookNoBackup(final Method origin,
-                                           final Method replace);
 
     public static native int hook(final Class<?> clazz, final String name,
                                   final String signature, final Method replace);
 
+    public static native boolean recover(final int slot, final Method origin);
+
+    public static native void hookNoBackup(final Method origin,
+                                           final Method replace);
+
+    @SuppressWarnings("all")
     public static native void hookNoBackup(final Class<?> clazz,
                                            final String name, final String signature, final Method replace);
 
@@ -50,8 +59,12 @@ public class AndHook {
 
     public static native void deoptimizeMethod(final Method target);
 
-    public static native void dumpClassMethods(final Class<?> clazz,
-                                               final String clsname);
+    @Deprecated
+    public static native void replaceMethod(final Method origin,
+                                            final Method replace);
+
+    private static native void dumpClassMethods(final Class<?> clazz,
+                                                final String clsname);
 
     public static void dumpClassMethods(final Class<?> clazz) {
         dumpClassMethods(clazz, null);
@@ -64,7 +77,7 @@ public class AndHook {
     public static void invokeVoidMethod(final int slot, final Object receiver,
                                         final Object... params) {
         if (android.os.Build.VERSION.SDK_INT <= 20) {
-            DalvikHook.invokeVoidMethod(slot, receiver, params);
+            Dalvik.invokeVoidMethod(slot, receiver, params);
         } else {
             invokeMethod(slot, receiver, params);
         }
@@ -73,7 +86,7 @@ public class AndHook {
     public static boolean invokeBooleanMethod(final int slot,
                                               final Object receiver, final Object... params) {
         if (android.os.Build.VERSION.SDK_INT <= 20) {
-            return DalvikHook.invokeBooleanMethod(slot, receiver, params);
+            return Dalvik.invokeBooleanMethod(slot, receiver, params);
         } else {
             return (boolean) invokeMethod(slot, receiver, params);
         }
@@ -82,7 +95,7 @@ public class AndHook {
     public static byte invokeByteMethod(final int slot, final Object receiver,
                                         final Object... params) {
         if (android.os.Build.VERSION.SDK_INT <= 20) {
-            return DalvikHook.invokeByteMethod(slot, receiver, params);
+            return Dalvik.invokeByteMethod(slot, receiver, params);
         } else {
             return (byte) invokeMethod(slot, receiver, params);
         }
@@ -91,7 +104,7 @@ public class AndHook {
     public static short invokeShortMethod(final int slot,
                                           final Object receiver, final Object... params) {
         if (android.os.Build.VERSION.SDK_INT <= 20) {
-            return DalvikHook.invokeShortMethod(slot, receiver, params);
+            return Dalvik.invokeShortMethod(slot, receiver, params);
         } else {
             return (short) invokeMethod(slot, receiver, params);
         }
@@ -100,7 +113,7 @@ public class AndHook {
     public static char invokeCharMethod(final int slot, final Object receiver,
                                         final Object... params) {
         if (android.os.Build.VERSION.SDK_INT <= 20) {
-            return DalvikHook.invokeCharMethod(slot, receiver, params);
+            return Dalvik.invokeCharMethod(slot, receiver, params);
         } else {
             return (char) invokeMethod(slot, receiver, params);
         }
@@ -109,7 +122,7 @@ public class AndHook {
     public static int invokeIntMethod(final int slot, final Object receiver,
                                       final Object... params) {
         if (android.os.Build.VERSION.SDK_INT <= 20) {
-            return DalvikHook.invokeIntMethod(slot, receiver, params);
+            return Dalvik.invokeIntMethod(slot, receiver, params);
         } else {
             return (int) invokeMethod(slot, receiver, params);
         }
@@ -118,7 +131,7 @@ public class AndHook {
     public static long invokeLongMethod(final int slot, final Object receiver,
                                         final Object... params) {
         if (android.os.Build.VERSION.SDK_INT <= 20) {
-            return DalvikHook.invokeLongMethod(slot, receiver, params);
+            return Dalvik.invokeLongMethod(slot, receiver, params);
         } else {
             return (long) invokeMethod(slot, receiver, params);
         }
@@ -127,7 +140,7 @@ public class AndHook {
     public static float invokeFloatMethod(final int slot,
                                           final Object receiver, final Object... params) {
         if (android.os.Build.VERSION.SDK_INT <= 20) {
-            return DalvikHook.invokeFloatMethod(slot, receiver, params);
+            return Dalvik.invokeFloatMethod(slot, receiver, params);
         } else {
             return (float) invokeMethod(slot, receiver, params);
         }
@@ -136,7 +149,7 @@ public class AndHook {
     public static double invokeDoubleMethod(final int slot,
                                             final Object receiver, final Object... params) {
         if (android.os.Build.VERSION.SDK_INT <= 20) {
-            return DalvikHook.invokeDoubleMethod(slot, receiver, params);
+            return Dalvik.invokeDoubleMethod(slot, receiver, params);
         } else {
             return (double) invokeMethod(slot, receiver, params);
         }
@@ -189,6 +202,8 @@ public class AndHook {
             final String name1 = replace.getName();
             final int slot = AndHook.hook(clazz, name, signature, replace);
             if (slot >= 0) {
+                // @TODO Known issue: backup saving should be performed before
+                // hook, e.g. ClassLoader
                 saveBackupSlot(slot, clazz, name, cls1, name1, replace);
             }
         }
@@ -301,7 +316,8 @@ public class AndHook {
                 try {
                     f.set(null, value);
                 } catch (final Exception e) {
-                    Log.e(AndHook.LOG_TAG, "failed to set instance field " + name, e);
+                    Log.e(AndHook.LOG_TAG, "failed to set instance field "
+                            + name, e);
                 }
             }
         }
@@ -327,7 +343,8 @@ public class AndHook {
                     f = c.getDeclaredField(name);
                 } catch (final NoSuchFieldException e) {
                     c = c.getSuperclass();
-                    if (c == null) break;
+                    if (c == null)
+                        break;
                 }
             } while (f == null);
             if (f != null) {
@@ -339,13 +356,12 @@ public class AndHook {
             return f;
         }
 
-        public static Method findVoidMethod(final Class<?> clazz,
-                                            final String name) {
+        public static Method findMethod(final Class<?> clazz, final String name) {
             return findMethod(clazz, name, (Class<?>[]) null);
         }
 
-        public static Method findMethod(final Class<?> clazz, final String name,
-                                        final Class<?>... parameterTypes) {
+        public static Method findMethod(final Class<?> clazz,
+                                        final String name, final Class<?>... parameterTypes) {
             Method m = null;
             Class<?> c = clazz;
             do {
@@ -353,7 +369,8 @@ public class AndHook {
                     m = c.getDeclaredMethod(name, parameterTypes);
                 } catch (final NoSuchMethodException e) {
                     c = c.getSuperclass();
-                    if (c == null) break;
+                    if (c == null)
+                        break;
                 }
             } while (m == null);
             if (m != null) {
@@ -402,7 +419,9 @@ public class AndHook {
 
             Class<?> clazz() default Hook.class; // class
 
-            String name() default ""; // method name
+            String name() default ""; // target method name
+
+            boolean need_origin() default true;
         }
 
         public static void applyHooks(final Class<?> holdClass,
@@ -410,29 +429,36 @@ public class AndHook {
             AndHook.ensureClassInitialized(holdClass);
             AndHook.suspendAll();
             for (final Method hookMethod : holdClass.getDeclaredMethods()) {
-                final Hook hook = hookMethod.getAnnotation(Hook.class);
-                if (hook != null) {
-                    String name = hook.name();
+                final Hook hookInfo = hookMethod.getAnnotation(Hook.class);
+                if (hookInfo != null) {
+                    String name = hookInfo.name();
                     if (name.isEmpty())
                         name = hookMethod.getName();
 
-                    Class<?> clazz = hook.clazz();
+                    Class<?> clazz = hookInfo.clazz();
                     Method origin;
                     try {
                         if (clazz == Hook.class)
-                            clazz = loader.loadClass(hook.value());
+                            clazz = loader.loadClass(hookInfo.value());
                         final Class<?>[] parameterTypes = hookMethod
                                 .getParameterTypes();
                         final String sig = asConstructor(clazz, name,
                                 parameterTypes);
                         if (sig != null) {
-                            // AndHook.ensureClassInitialized(hook.clazz());
-                            hook(clazz, "<init>", sig, hookMethod);
+                            if (hookInfo.need_origin()) {
+                                hook(clazz, "<init>", sig, hookMethod);
+                            } else {
+                                hookNoBackup(clazz, "<init>", sig, hookMethod);
+                            }
                         } else {
                             origin = findMethod(clazz, name, parameterTypes);
                             if (origin != null) {
                                 AndHook.ensureClassInitialized(clazz);
-                                hook(origin, hookMethod);
+                                if (hookInfo.need_origin()) {
+                                    hook(origin, hookMethod);
+                                } else {
+                                    hookNoBackup(origin, hookMethod);
+                                }
                             }
                         }
                     } catch (final Exception e) {
@@ -444,7 +470,7 @@ public class AndHook {
         }
     }
 
-    private static final class DalvikHook {
+    private static final class Dalvik {
         public static native void invokeVoidMethod(final int slot,
                                                    final Object receiver, final Object... params);
 
