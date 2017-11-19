@@ -11,7 +11,7 @@ import android.util.Pair;
 
 /**
  * @author rrrfff
- * @version 2.6.0
+ * @version 2.7.1
  */
 @SuppressWarnings({"unused", "WeakerAccess", "JniMissingFunction"})
 public final class AndHook {
@@ -45,9 +45,8 @@ public final class AndHook {
     public static native void hookNoBackup(final Method origin,
                                            final Method replace);
 
-    @SuppressWarnings("all")
-    public static native void hookNoBackup(final Class<?> clazz,
-                                           final String name, final String signature, final Method replace);
+    public static native void hookNoBackup(final Class<?> clazz, final String name,
+                                           final String signature, final Method replace);
 
     public static native boolean suspendAll();
 
@@ -155,16 +154,19 @@ public final class AndHook {
         }
     }
 
-    public static Object invokeObjectMethod(final int slot,
-                                            final Object receiver, final Object... params) {
-        return invokeMethod(slot, receiver, params);
+    @SuppressWarnings("unchecked")
+    public static <T> T invokeObjectMethod(final int slot,
+                                           final Object receiver, final Object... params) {
+        return (T) invokeMethod(slot, receiver, params);
     }
 
     private static native Object invokeMethod(final int slot,
                                               final Object receiver, final Object... params);
 
     public static final class HookHelper {
-        private static final ConcurrentHashMap<Pair<String, String>, Integer> sBackups = new ConcurrentHashMap<>();
+        static final String constructorName = "<init>";
+        private static final ConcurrentHashMap<Pair<String, String>, Integer> sBackups
+                = new ConcurrentHashMap<>();
         private static Method getSignature = null;
 
         static {
@@ -195,7 +197,6 @@ public final class AndHook {
             }
         }
 
-        @SuppressWarnings("all")
         public static void hook(final Class<?> clazz, final String name,
                                 final String signature, final Method replace) {
             final Class<?> cls1 = replace.getDeclaringClass();
@@ -303,15 +304,15 @@ public final class AndHook {
                     receiver, params);
         }
 
-        public static Object invokeObjectOrigin(final Object receiver,
-                                                final Object... params) {
-            return AndHook.invokeObjectMethod(getBackupSlot(params.length),
-                    receiver, params);
+        @SuppressWarnings("unchecked")
+        public static <T> T invokeObjectOrigin(final Object receiver,
+                                               final Object... params) {
+            return (T) AndHook.invokeMethod(getBackupSlot(params.length), receiver, params);
         }
 
         public static void setObjectField(final Object obj, final String name,
                                           final Object value) {
-            final Field f = findField(obj.getClass(), name);
+            final Field f = findFieldHierarchically(obj.getClass(), name);
             if (f != null) {
                 try {
                     f.set(null, value);
@@ -324,7 +325,7 @@ public final class AndHook {
 
         public static void setStaticObjectField(final Class<?> clazz,
                                                 final String name, final Object value) {
-            final Field f = findField(clazz, name);
+            final Field f = findFieldHierarchically(clazz, name);
             if (f != null) {
                 try {
                     f.set(null, value);
@@ -335,7 +336,7 @@ public final class AndHook {
             }
         }
 
-        public static Field findField(final Class<?> clazz, final String name) {
+        public static Field findFieldHierarchically(final Class<?> clazz, final String name) {
             Field f = null;
             Class<?> c = clazz;
             do {
@@ -356,12 +357,9 @@ public final class AndHook {
             return f;
         }
 
-        public static Method findMethod(final Class<?> clazz, final String name) {
-            return findMethod(clazz, name, (Class<?>[]) null);
-        }
-
-        public static Method findMethod(final Class<?> clazz,
-                                        final String name, final Class<?>... parameterTypes) {
+        public static Method findMethodHierarchically(final Class<?> clazz,
+                                                      final String name,
+                                                      final Class<?>... parameterTypes) {
             Method m = null;
             Class<?> c = clazz;
             do {
@@ -383,13 +381,7 @@ public final class AndHook {
         }
 
         @SuppressWarnings("ConstantConditions")
-        private static String asConstructor(final Class<?> clazz,
-                                            final String method, final Class<?>[] parameterTypes) {
-            final String clsname = clazz.getName();
-            if (!method.equals("<init>") && !clsname.endsWith("." + method)
-                    && !clsname.endsWith("$" + method))
-                return null;
-
+        static String getConstructorSignature(final Class<?> clazz, final Class<?>[] parameterTypes) {
             try {
                 if (Build.VERSION.SDK_INT <= 25) {
                     return (String) getSignature.invoke(clazz
@@ -410,6 +402,16 @@ public final class AndHook {
                         "failed to get signature of constructor!", e);
             }
             return null;
+        }
+
+        private static String asConstructor(final Class<?> clazz, final String method,
+                                            final Class<?>[] parameterTypes) {
+            final String clsname = clazz.getName();
+            if (!method.equals(constructorName) && !clsname.endsWith("." + method) &&
+                    !clsname.endsWith("$" + method)) {
+                return null;
+            }
+            return getConstructorSignature(clazz, parameterTypes);
         }
 
         @java.lang.annotation.Target(java.lang.annotation.ElementType.METHOD)
@@ -446,12 +448,12 @@ public final class AndHook {
                                 parameterTypes);
                         if (sig != null) {
                             if (hookInfo.need_origin()) {
-                                hook(clazz, "<init>", sig, hookMethod);
+                                hook(clazz, constructorName, sig, hookMethod);
                             } else {
-                                hookNoBackup(clazz, "<init>", sig, hookMethod);
+                                hookNoBackup(clazz, constructorName, sig, hookMethod);
                             }
                         } else {
-                            origin = findMethod(clazz, name, parameterTypes);
+                            origin = findMethodHierarchically(clazz, name, parameterTypes);
                             if (origin != null) {
                                 AndHook.ensureClassInitialized(clazz);
                                 if (hookInfo.need_origin()) {
@@ -498,9 +500,10 @@ public final class AndHook {
         public static native double invokeDoubleMethod(final int slot,
                                                        final Object receiver, final Object... params);
 
-        public static Object invokeObjectMethod(final int slot,
-                                                final Object receiver, final Object... params) {
-            return AndHook.invokeMethod(slot, receiver, params);
+        @SuppressWarnings("unchecked")
+        public static <T> T invokeObjectMethod(final int slot,
+                                               final Object receiver, final Object... params) {
+            return (T) AndHook.invokeMethod(slot, receiver, params);
         }
     }
 }
