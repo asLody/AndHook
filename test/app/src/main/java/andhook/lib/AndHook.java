@@ -11,7 +11,7 @@ import android.util.Pair;
 
 /**
  * @author rrrfff
- * @version 2.7.1
+ * @version 2.7.2
  */
 @SuppressWarnings({"unused", "WeakerAccess", "JniMissingFunction"})
 public final class AndHook {
@@ -315,7 +315,7 @@ public final class AndHook {
             final Field f = findFieldHierarchically(obj.getClass(), name);
             if (f != null) {
                 try {
-                    f.set(null, value);
+                    f.set(obj, value);
                 } catch (final Exception e) {
                     Log.e(AndHook.LOG_TAG, "failed to set instance field "
                             + name, e);
@@ -334,6 +334,20 @@ public final class AndHook {
                             + " for class " + clazz.getName(), e);
                 }
             }
+        }
+
+        public static Class<?> findClass(final String classname) {
+            return findClass(classname, AndHook.class.getClassLoader());
+        }
+
+        public static Class<?> findClass(final String classname, final ClassLoader loader) {
+            try {
+                return loader.loadClass(classname);
+            } catch (final Exception e) {
+                Log.e(AndHook.LOG_TAG, "failed to find class " + classname
+                        + " on ClassLoader " + loader, e);
+            }
+            return null;
         }
 
         public static Field findFieldHierarchically(final Class<?> clazz, final String name) {
@@ -424,6 +438,10 @@ public final class AndHook {
             String name() default ""; // target method name
 
             boolean need_origin() default true;
+        }
+
+        public static void applyHooks(final Class<?> holdClass) {
+            applyHooks(holdClass, holdClass.getClassLoader());
         }
 
         public static void applyHooks(final Class<?> holdClass,
