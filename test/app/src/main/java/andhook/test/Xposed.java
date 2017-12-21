@@ -1,13 +1,14 @@
 package andhook.test;
 
 import java.lang.reflect.Method;
-
 import andhook.lib.AndHook.HookHelper;
 import andhook.lib.xposed.XC_MethodReplacement;
 import andhook.lib.xposed.XposedHelpers;
 import andhook.lib.xposed.XC_MethodHook;
 import andhook.lib.xposed.MethodHookParam;
-
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.os.Build;
 import android.system.OsConstants;
 import android.util.Log;
 
@@ -103,7 +104,8 @@ public final class Xposed {
         }
     }
 
-    private static void hook_IoBridge_O() {
+    @TargetApi(Build.VERSION_CODES.O)
+	private static void hook_IoBridge_O() {
         final Class<?> IoBridge = HookHelper.findClass("libcore/io/IoBridge");
         final Method socket = HookHelper.findMethodHierarchically(IoBridge,
                 "socket", int.class, int.class, int.class);
@@ -117,7 +119,7 @@ public final class Xposed {
             Log.e(AndTest.LOG_TAG, "socket test error", e);
         }
 
-        final XC_MethodHook.Unhook uk = XposedHelpers.findAndHookMethod(IoBridge, "socket", boolean.class,
+        final XC_MethodHook.Unhook uk = XposedHelpers.findAndHookMethod(IoBridge, "socket", int.class, int.class, int.class,
                 new XC_MethodReplacement() {
                     @Override
                     protected Object replaceHookedMethod(MethodHookParam param)
@@ -162,7 +164,7 @@ public final class Xposed {
         try {
             hook_print();
             Log.i(AndTest.LOG_TAG, "    \n");
-            if (android.os.Build.VERSION.SDK_INT <= 25) {
+            if (android.os.Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 hook_IoBridge();
             } else {
                 hook_IoBridge_O();

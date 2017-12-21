@@ -7,12 +7,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentHashMap;
 
+import android.os.Build;
 import android.util.Log;
 import android.util.Pair;
 
 /**
  * @author rrrfff
- * @version 3.0.0
+ * @version 3.0.1
  */
 @SuppressWarnings({"unused", "WeakerAccess", "JniMissingFunction"})
 public final class AndHook {
@@ -109,7 +110,7 @@ public final class AndHook {
 
     public static void invokeVoidMethod(final int slot, final Object receiver,
                                         final Object... params) {
-        if (android.os.Build.VERSION.SDK_INT <= 20) {
+        if (android.os.Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT_WATCH) {
             Dalvik.invokeVoidMethod(slot, receiver, params);
         } else {
             invoke(slot, receiver, params);
@@ -118,7 +119,7 @@ public final class AndHook {
 
     public static boolean invokeBooleanMethod(final int slot,
                                               final Object receiver, final Object... params) {
-        if (android.os.Build.VERSION.SDK_INT <= 20) {
+        if (android.os.Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT_WATCH) {
             return Dalvik.invokeBooleanMethod(slot, receiver, params);
         } else {
             return (boolean) invoke(slot, receiver, params);
@@ -127,7 +128,7 @@ public final class AndHook {
 
     public static byte invokeByteMethod(final int slot, final Object receiver,
                                         final Object... params) {
-        if (android.os.Build.VERSION.SDK_INT <= 20) {
+        if (android.os.Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT_WATCH) {
             return Dalvik.invokeByteMethod(slot, receiver, params);
         } else {
             return (byte) invoke(slot, receiver, params);
@@ -136,7 +137,7 @@ public final class AndHook {
 
     public static short invokeShortMethod(final int slot,
                                           final Object receiver, final Object... params) {
-        if (android.os.Build.VERSION.SDK_INT <= 20) {
+        if (android.os.Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT_WATCH) {
             return Dalvik.invokeShortMethod(slot, receiver, params);
         } else {
             return (short) invoke(slot, receiver, params);
@@ -145,7 +146,7 @@ public final class AndHook {
 
     public static char invokeCharMethod(final int slot, final Object receiver,
                                         final Object... params) {
-        if (android.os.Build.VERSION.SDK_INT <= 20) {
+        if (android.os.Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT_WATCH) {
             return Dalvik.invokeCharMethod(slot, receiver, params);
         } else {
             return (char) invoke(slot, receiver, params);
@@ -154,7 +155,7 @@ public final class AndHook {
 
     public static int invokeIntMethod(final int slot, final Object receiver,
                                       final Object... params) {
-        if (android.os.Build.VERSION.SDK_INT <= 20) {
+        if (android.os.Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT_WATCH) {
             return Dalvik.invokeIntMethod(slot, receiver, params);
         } else {
             return (int) invoke(slot, receiver, params);
@@ -163,7 +164,7 @@ public final class AndHook {
 
     public static long invokeLongMethod(final int slot, final Object receiver,
                                         final Object... params) {
-        if (android.os.Build.VERSION.SDK_INT <= 20) {
+        if (android.os.Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT_WATCH) {
             return Dalvik.invokeLongMethod(slot, receiver, params);
         } else {
             return (long) invoke(slot, receiver, params);
@@ -172,7 +173,7 @@ public final class AndHook {
 
     public static float invokeFloatMethod(final int slot,
                                           final Object receiver, final Object... params) {
-        if (android.os.Build.VERSION.SDK_INT <= 20) {
+        if (android.os.Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT_WATCH) {
             return Dalvik.invokeFloatMethod(slot, receiver, params);
         } else {
             return (float) invoke(slot, receiver, params);
@@ -181,7 +182,7 @@ public final class AndHook {
 
     public static double invokeDoubleMethod(final int slot,
                                             final Object receiver, final Object... params) {
-        if (android.os.Build.VERSION.SDK_INT <= 20) {
+        if (android.os.Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT_WATCH) {
             return Dalvik.invokeDoubleMethod(slot, receiver, params);
         } else {
             return (double) invoke(slot, receiver, params);
@@ -191,7 +192,7 @@ public final class AndHook {
     @SuppressWarnings("unchecked")
     public static <T> T invokeObjectMethod(final int slot,
                                            final Object receiver, final Object... params) {
-        if (android.os.Build.VERSION.SDK_INT <= 20) {
+        if (android.os.Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT_WATCH) {
             return (T) Dalvik.invokeObjectMethod(slot, receiver, params);
         } else {
             return (T) invoke(slot, receiver, params);
