@@ -12,7 +12,6 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 
 /**
  * This class contains most of Xposed's central logic, such as initialization and callbacks used by
@@ -68,7 +67,7 @@ public final class XposedBridge {
      * @see XposedHelpers#findAndHookConstructor(Class, Object...)
      * @see #hookAllConstructors
      */
-    static XC_MethodHook.Unhook hookMethod(final Member hookMethod, final XC_MethodHook callback) {
+    public static XC_MethodHook.Unhook hookMethod(final Member hookMethod, final XC_MethodHook callback) {
         if (!(hookMethod instanceof Method) && !(hookMethod instanceof Constructor<?>)) {
             throw new IllegalArgumentException("Only methods and constructors can be hooked: " + hookMethod.toString());
         } else if (hookMethod.getDeclaringClass().isInterface()) {
@@ -83,6 +82,8 @@ public final class XposedBridge {
         }
 
         if (additionalInfo == null) {
+        	if (Modifier.isStatic(hookMethod.getModifiers()))
+                AndHook.ensureClassInitialized(hookMethod.getDeclaringClass());
             additionalInfo = new AdditionalHookInfo(hookMethod, AndHook.backup(hookMethod));
             if (additionalInfo.slot == -1)
                 throw new RuntimeException("Failed to backup methods: " + hookMethod.toString());
@@ -121,6 +122,8 @@ public final class XposedBridge {
     }
 
     /**
+     * Removes hook for the specified method/constructor.
+     * 
      * AndHook extension function.
      */
     public static boolean unhookMethod(final int slot, final Member hookMethod) {
@@ -130,6 +133,25 @@ public final class XposedBridge {
         return AndHook.restore(slot, hookMethod);
     }
 
+    /**
+     * Hooks all methods that were declared in the specified class. Inherited
+     * methods and constructors are not considered. For constructors, use
+     * {@link #hookAllConstructors} instead.
+     * 
+     * AndHook extension function.
+     *
+     * @param hookClass  The class to check for declared methods.
+     * @param callback   The callback to be executed when the hooked methods are called.
+     * @return A set containing one object for each found method which can be used to unhook it.
+     */
+    @SuppressWarnings("all")
+    public static HashSet<XC_MethodHook.Unhook> hookAllMethods(final Class<?> hookClass, final XC_MethodHook callback) {
+        final HashSet<XC_MethodHook.Unhook> unhooks = new HashSet<>();
+        for (final Member method : hookClass.getDeclaredMethods())
+            unhooks.add(hookMethod(method, callback));
+        return unhooks;
+    }
+    
     /**
      * Hooks all methods with a certain name that were declared in the specified class. Inherited
      * methods and constructors are not considered. For constructors, use
@@ -141,7 +163,7 @@ public final class XposedBridge {
      * @return A set containing one object for each found method which can be used to unhook it.
      */
     @SuppressWarnings("all")
-    public static Set<XC_MethodHook.Unhook> hookAllMethods(final Class<?> hookClass, final String methodName, final XC_MethodHook callback) {
+    public static HashSet<XC_MethodHook.Unhook> hookAllMethods(final Class<?> hookClass, final String methodName, final XC_MethodHook callback) {
         final HashSet<XC_MethodHook.Unhook> unhooks = new HashSet<>();
         for (final Member method : hookClass.getDeclaredMethods())
             if (method.getName().equals(methodName))
@@ -157,7 +179,7 @@ public final class XposedBridge {
      * @return A set containing one object for each found constructor which can be used to unhook it.
      */
     @SuppressWarnings("all")
-    public static Set<XC_MethodHook.Unhook> hookAllConstructors(final Class<?> hookClass, final XC_MethodHook callback) {
+    public static HashSet<XC_MethodHook.Unhook> hookAllConstructors(final Class<?> hookClass, final XC_MethodHook callback) {
         final HashSet<XC_MethodHook.Unhook> unhooks = new HashSet<>();
         for (Member constructor : hookClass.getDeclaredConstructors())
             unhooks.add(hookMethod(constructor, callback));
