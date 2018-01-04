@@ -12,11 +12,20 @@ android {
             sourceCompatibility JavaVersion.VERSION_1_8
             targetCompatibility JavaVersion.VERSION_1_8
         }
+        externalNativeBuild {
+            ndkBuild {
+                abiFilters "armeabi-v7a", "x86"
+            }
+        }
     }
-
     buildTypes {
         release {
             minifyEnabled false
+        }
+    }
+    externalNativeBuild {
+        ndkBuild {
+            path file("src/main/jni/Android.mk")
         }
     }
     compileOptions {

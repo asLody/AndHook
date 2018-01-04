@@ -2,6 +2,7 @@
 .gradle/
 build/
 */build/
+*/.externalNativeBuild/
 gradlew
 gradlew.bat
 .idea/*
