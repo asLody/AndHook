@@ -24,8 +24,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipFile;
@@ -59,12 +57,12 @@ public final class XposedHelpers {
      * @return A reference to the class.
      * @throws ClassNotFoundError In case the class was not found.
      */
-    public static Class<?> findClass(String className, ClassLoader classLoader) {
+    public static Class<?> findClass(final String className, ClassLoader classLoader) {
         if (classLoader == null)
             classLoader = ClassLoader.getSystemClassLoader();
         try {
             return classLoader.loadClass(className);
-        } catch (ClassNotFoundException e) {
+        } catch (final ClassNotFoundException e) {
             throw new ClassNotFoundError(e);
         }
     }
@@ -77,10 +75,10 @@ public final class XposedHelpers {
      * @param classLoader The class loader, or {@code null} for the boot class loader.
      * @return A reference to the class, or {@code null} if it doesn't exist.
      */
-    public static Class<?> findClassIfExists(String className, ClassLoader classLoader) {
+    public static Class<?> findClassIfExists(final String className, final ClassLoader classLoader) {
         try {
             return findClass(className, classLoader);
-        } catch (ClassNotFoundError e) {
+        } catch (final ClassNotFoundError e) {
             return null;
         }
     }
@@ -93,22 +91,22 @@ public final class XposedHelpers {
      * @return A reference to the field.
      * @throws NoSuchFieldError In case the field was not found.
      */
-    public static Field findField(Class<?> clazz, String fieldName) {
-        String fullFieldName = clazz.getName() + '#' + fieldName;
+    public static Field findField(final Class<?> clazz, final String fieldName) {
+        final String fullFieldName = clazz.getName() + '#' + fieldName;
 
         if (fieldCache.containsKey(fullFieldName)) {
-            Field field = fieldCache.get(fullFieldName);
+            final Field field = fieldCache.get(fullFieldName);
             if (field == null)
                 throw new NoSuchFieldError(fullFieldName);
             return field;
         }
 
         try {
-            Field field = findFieldRecursiveImpl(clazz, fieldName);
+            final Field field = findFieldRecursiveImpl(clazz, fieldName);
             field.setAccessible(true);
             fieldCache.put(fullFieldName, field);
             return field;
-        } catch (NoSuchFieldException e) {
+        } catch (final NoSuchFieldException e) {
             fieldCache.put(fullFieldName, null);
             throw new NoSuchFieldError(fullFieldName);
         }
@@ -122,18 +120,19 @@ public final class XposedHelpers {
      * @param fieldName The field name.
      * @return A reference to the field, or {@code null} if it doesn't exist.
      */
-    public static Field findFieldIfExists(Class<?> clazz, String fieldName) {
+    public static Field findFieldIfExists(final Class<?> clazz, final String fieldName) {
         try {
             return findField(clazz, fieldName);
-        } catch (NoSuchFieldError e) {
+        } catch (final NoSuchFieldError e) {
             return null;
         }
     }
 
-    private static Field findFieldRecursiveImpl(Class<?> clazz, String fieldName) throws NoSuchFieldException {
+    private static Field findFieldRecursiveImpl(Class<?> clazz,
+                                                final String fieldName) throws NoSuchFieldException {
         try {
             return clazz.getDeclaredField(fieldName);
-        } catch (NoSuchFieldException e) {
+        } catch (final NoSuchFieldException e) {
             while (true) {
                 clazz = clazz.getSuperclass();
                 if (clazz == null || clazz.equals(Object.class))
@@ -141,7 +140,7 @@ public final class XposedHelpers {
 
                 try {
                     return clazz.getDeclaredField(fieldName);
-                } catch (NoSuchFieldException ignored) {
+                } catch (final NoSuchFieldException ignored) {
                 }
             }
             throw e;
@@ -157,10 +156,10 @@ public final class XposedHelpers {
      * @return A reference to the first field of the given type.
      * @throws NoSuchFieldError In case no matching field was not found.
      */
-    public static Field findFirstFieldByExactType(Class<?> clazz, Class<?> type) {
+    public static Field findFirstFieldByExactType(final Class<?> clazz, final Class<?> type) {
         Class<?> clz = clazz;
         do {
-            for (Field field : clz.getDeclaredFields()) {
+            for (final Field field : clz.getDeclaredFields()) {
                 if (field.getType() == type) {
                     field.setAccessible(true);
                     return field;
@@ -175,14 +174,14 @@ public final class XposedHelpers {
      * Look up a method and hook it. See {@link #findAndHookMethod(String, ClassLoader, String, Object...)}
      * for details.
      */
-    public static XC_MethodHook.Unhook findAndHookMethod(Class<?> clazz, String methodName,
-                                                         Object... parameterTypesAndCallback) {
+    public static XC_MethodHook.Unhook findAndHookMethod(final Class<?> clazz, final String methodName,
+                                                         final Object... parameterTypesAndCallback) {
         if (parameterTypesAndCallback.length == 0 ||
                 !(parameterTypesAndCallback[parameterTypesAndCallback.length - 1] instanceof XC_MethodHook))
             throw new IllegalArgumentException("no callback defined");
 
-        XC_MethodHook callback = (XC_MethodHook) parameterTypesAndCallback[parameterTypesAndCallback.length - 1];
-        Method m = findMethodExact(clazz, methodName, getParameterClasses(clazz.getClassLoader(),
+        final XC_MethodHook callback = (XC_MethodHook) parameterTypesAndCallback[parameterTypesAndCallback.length - 1];
+        final Method m = findMethodExact(clazz, methodName, getParameterClasses(clazz.getClassLoader(),
                 parameterTypesAndCallback));
 
         return XposedBridge.hookMethod(m, callback);
@@ -257,7 +256,10 @@ public final class XposedHelpers {
      * @throws NoSuchMethodError  In case the method was not found.
      * @throws ClassNotFoundError In case the target class or one of the parameter types couldn't be resolved.
      */
-    public static XC_MethodHook.Unhook findAndHookMethod(String className, ClassLoader classLoader, String methodName, Object... parameterTypesAndCallback) {
+    public static XC_MethodHook.Unhook findAndHookMethod(final String className,
+                                                         final ClassLoader classLoader,
+                                                         final String methodName,
+                                                         final Object... parameterTypesAndCallback) {
         return findAndHookMethod(findClass(className, classLoader), methodName, parameterTypesAndCallback);
     }
 
@@ -265,7 +267,8 @@ public final class XposedHelpers {
      * Look up a method in a class and set it to accessible.
      * See {@link #findMethodExact(String, ClassLoader, String, Object...)} for details.
      */
-    public static Method findMethodExact(Class<?> clazz, String methodName, Object... parameterTypes) {
+    public static Method findMethodExact(final Class<?> clazz, final String methodName,
+                                         final Object... parameterTypes) {
         return findMethodExact(clazz, methodName, getParameterClasses(clazz.getClassLoader(), parameterTypes));
     }
 
@@ -273,10 +276,11 @@ public final class XposedHelpers {
      * Look up and return a method if it exists.
      * See {@link #findMethodExactIfExists(String, ClassLoader, String, Object...)} for details.
      */
-    public static Method findMethodExactIfExists(Class<?> clazz, String methodName, Object... parameterTypes) {
+    public static Method findMethodExactIfExists(final Class<?> clazz, final String methodName,
+                                                 final Object... parameterTypes) {
         try {
             return findMethodExact(clazz, methodName, parameterTypes);
-        } catch (ClassNotFoundError | NoSuchMethodError e) {
+        } catch (final ClassNotFoundError | NoSuchMethodError e) {
             return null;
         }
     }
@@ -296,7 +300,8 @@ public final class XposedHelpers {
      * @throws NoSuchMethodError  In case the method was not found.
      * @throws ClassNotFoundError In case the target class or one of the parameter types couldn't be resolved.
      */
-    public static Method findMethodExact(String className, ClassLoader classLoader, String methodName, Object... parameterTypes) {
+    public static Method findMethodExact(final String className, final ClassLoader classLoader,
+                                         final String methodName, final Object... parameterTypes) {
         return findMethodExact(findClass(className, classLoader), methodName, getParameterClasses(classLoader, parameterTypes));
     }
 
@@ -311,10 +316,11 @@ public final class XposedHelpers {
      * @param parameterTypes The parameter types of the target method.
      * @return A reference to the method, or {@code null} if it doesn't exist.
      */
-    public static Method findMethodExactIfExists(String className, ClassLoader classLoader, String methodName, Object... parameterTypes) {
+    public static Method findMethodExactIfExists(final String className, final ClassLoader classLoader,
+                                                 final String methodName, final Object... parameterTypes) {
         try {
             return findMethodExact(className, classLoader, methodName, parameterTypes);
-        } catch (ClassNotFoundError | NoSuchMethodError e) {
+        } catch (final ClassNotFoundError | NoSuchMethodError e) {
             return null;
         }
     }
@@ -325,22 +331,23 @@ public final class XposedHelpers {
      * <p>
      * <p>This variant requires that you already have reference to all the parameter types.
      */
-    public static Method findMethodExact(Class<?> clazz, String methodName, Class<?>... parameterTypes) {
-        String fullMethodName = clazz.getName() + '#' + methodName + getParametersString(parameterTypes) + "#exact";
+    public static Method findMethodExact(final Class<?> clazz, final String methodName,
+                                         final Class<?>... parameterTypes) {
+        final String fullMethodName = clazz.getName() + '#' + methodName + getParametersString(parameterTypes) + "#exact";
 
         if (methodCache.containsKey(fullMethodName)) {
-            Method method = methodCache.get(fullMethodName);
+            final Method method = methodCache.get(fullMethodName);
             if (method == null)
                 throw new NoSuchMethodError(fullMethodName);
             return method;
         }
 
         try {
-            Method method = clazz.getDeclaredMethod(methodName, parameterTypes);
+            final Method method = clazz.getDeclaredMethod(methodName, parameterTypes);
             method.setAccessible(true);
             methodCache.put(fullMethodName, method);
             return method;
-        } catch (NoSuchMethodException e) {
+        } catch (final NoSuchMethodException e) {
             methodCache.put(fullMethodName, null);
             throw new NoSuchMethodError(fullMethodName);
         }
@@ -357,18 +364,19 @@ public final class XposedHelpers {
      * @param parameterTypes The parameter types.
      * @return An array with matching methods, all set to accessible already.
      */
-    public static Method[] findMethodsByExactParameters(Class<?> clazz, Class<?> returnType, Class<?>... parameterTypes) {
-        List<Method> result = new LinkedList<>();
-        for (Method method : clazz.getDeclaredMethods()) {
+    public static Method[] findMethodsByExactParameters(final Class<?> clazz, final Class<?> returnType,
+                                                        final Class<?>... parameterTypes) {
+        final LinkedList<Method> result = new LinkedList<>();
+        for (final Method method : clazz.getDeclaredMethods()) {
             if (returnType != null && returnType != method.getReturnType())
                 continue;
 
-            Class<?>[] methodParameterTypes = method.getParameterTypes();
+            final Class<?>[] methodParameterTypes = method.getParameterTypes();
             if (parameterTypes.length != methodParameterTypes.length)
                 continue;
 
             boolean match = true;
-            for (int i = 0; i < parameterTypes.length; i++) {
+            for (int i = 0; i < parameterTypes.length; ++i) {
                 if (parameterTypes[i] != methodParameterTypes[i]) {
                     match = false;
                     break;
@@ -397,28 +405,29 @@ public final class XposedHelpers {
      * @return A reference to the best-matching method.
      * @throws NoSuchMethodError In case no suitable method was found.
      */
-    public static Method findMethodBestMatch(Class<?> clazz, String methodName, Class<?>... parameterTypes) {
-        String fullMethodName = clazz.getName() + '#' + methodName + getParametersString(parameterTypes) + "#bestmatch";
+    public static Method findMethodBestMatch(final Class<?> clazz, final String methodName,
+                                             final Class<?>... parameterTypes) {
+        final String fullMethodName = clazz.getName() + '#' + methodName + getParametersString(parameterTypes) + "#bestmatch";
 
         if (methodCache.containsKey(fullMethodName)) {
-            Method method = methodCache.get(fullMethodName);
+            final Method method = methodCache.get(fullMethodName);
             if (method == null)
                 throw new NoSuchMethodError(fullMethodName);
             return method;
         }
 
         try {
-            Method method = findMethodExact(clazz, methodName, parameterTypes);
+            final Method method = findMethodExact(clazz, methodName, parameterTypes);
             methodCache.put(fullMethodName, method);
             return method;
-        } catch (NoSuchMethodError ignored) {
+        } catch (final NoSuchMethodError ignored) {
         }
 
         Method bestMatch = null;
         Class<?> clz = clazz;
         boolean considerPrivateMethods = true;
         do {
-            for (Method method : clz.getDeclaredMethods()) {
+            for (final Method method : clz.getDeclaredMethods()) {
                 // don't consider private methods of superclasses
                 if (!considerPrivateMethods && Modifier.isPrivate(method.getModifiers()))
                     continue;
@@ -441,11 +450,11 @@ public final class XposedHelpers {
             bestMatch.setAccessible(true);
             methodCache.put(fullMethodName, bestMatch);
             return bestMatch;
-        } else {
-            NoSuchMethodError e = new NoSuchMethodError(fullMethodName);
-            methodCache.put(fullMethodName, null);
-            throw e;
         }
+
+        final NoSuchMethodError e = new NoSuchMethodError(fullMethodName);
+        methodCache.put(fullMethodName, null);
+        throw e;
     }
 
     /**
@@ -454,7 +463,8 @@ public final class XposedHelpers {
      * <p>See {@link #findMethodBestMatch(Class, String, Class...)} for details. This variant
      * determines the parameter types from the classes of the given objects.
      */
-    public static Method findMethodBestMatch(Class<?> clazz, String methodName, Object... args) {
+    public static Method findMethodBestMatch(final Class<?> clazz, final String methodName,
+                                             final Object... args) {
         return findMethodBestMatch(clazz, methodName, getParameterTypes(args));
     }
 
@@ -465,9 +475,10 @@ public final class XposedHelpers {
      * determines the parameter types from the classes of the given objects. For any item that is
      * {@code null}, the type is taken from {@code parameterTypes} instead.
      */
-    public static Method findMethodBestMatch(Class<?> clazz, String methodName, Class<?>[] parameterTypes, Object[] args) {
+    public static Method findMethodBestMatch(final Class<?> clazz, final String methodName,
+                                             final Class<?>[] parameterTypes, final Object[] args) {
         Class<?>[] argsClasses = null;
-        for (int i = 0; i < parameterTypes.length; i++) {
+        for (int i = 0; i < parameterTypes.length; ++i) {
             if (parameterTypes[i] != null)
                 continue;
             if (argsClasses == null)
@@ -480,8 +491,8 @@ public final class XposedHelpers {
     /**
      * Returns an array with the classes of the given objects.
      */
-    public static Class<?>[] getParameterTypes(Object... args) {
-        Class<?>[] clazzes = new Class<?>[args.length];
+    public static Class<?>[] getParameterTypes(final Object... args) {
+        final Class<?>[] clazzes = new Class<?>[args.length];
         for (int i = 0; i < args.length; i++) {
             clazzes[i] = (args[i] != null) ? args[i].getClass() : null;
         }
@@ -492,10 +503,10 @@ public final class XposedHelpers {
      * Retrieve classes from an array, where each element might either be a Class
      * already, or a String with the full class name.
      */
-    private static Class<?>[] getParameterClasses(ClassLoader classLoader, Object[] parameterTypesAndCallback) {
+    private static Class<?>[] getParameterClasses(final ClassLoader classLoader, final Object[] parameterTypesAndCallback) {
         Class<?>[] parameterClasses = null;
         for (int i = parameterTypesAndCallback.length - 1; i >= 0; i--) {
-            Object type = parameterTypesAndCallback[i];
+            final Object type = parameterTypesAndCallback[i];
             if (type == null)
                 throw new ClassNotFoundError("parameter type must not be null", null);
 
@@ -516,7 +527,7 @@ public final class XposedHelpers {
 
         // if there are no arguments for the method
         if (parameterClasses == null)
-            parameterClasses = new Class<?>[0];
+            return new Class<?>[0];
 
         return parameterClasses;
     }
@@ -524,14 +535,14 @@ public final class XposedHelpers {
     /**
      * Returns an array of the given classes.
      */
-    public static Class<?>[] getClassesAsArray(Class<?>... clazzes) {
+    public static Class<?>[] getClassesAsArray(final Class<?>... clazzes) {
         return clazzes;
     }
 
-    private static String getParametersString(Class<?>... clazzes) {
-        StringBuilder sb = new StringBuilder("(");
+    private static String getParametersString(final Class<?>... clazzes) {
+        final StringBuilder sb = new StringBuilder("(");
         boolean first = true;
-        for (Class<?> clazz : clazzes) {
+        for (final Class<?> clazz : clazzes) {
             if (first)
                 first = false;
             else
@@ -550,7 +561,7 @@ public final class XposedHelpers {
      * Look up a constructor of a class and set it to accessible.
      * See {@link #findMethodExact(String, ClassLoader, String, Object...)} for details.
      */
-    public static Constructor<?> findConstructorExact(Class<?> clazz, Object... parameterTypes) {
+    public static Constructor<?> findConstructorExact(final Class<?> clazz, final Object... parameterTypes) {
         return findConstructorExact(clazz, getParameterClasses(clazz.getClassLoader(), parameterTypes));
     }
 
@@ -558,10 +569,10 @@ public final class XposedHelpers {
      * Look up and return a constructor if it exists.
      * See {@link #findMethodExactIfExists(String, ClassLoader, String, Object...)} for details.
      */
-    public static Constructor<?> findConstructorExactIfExists(Class<?> clazz, Object... parameterTypes) {
+    public static Constructor<?> findConstructorExactIfExists(final Class<?> clazz, final Object... parameterTypes) {
         try {
             return findConstructorExact(clazz, parameterTypes);
-        } catch (ClassNotFoundError | NoSuchMethodError e) {
+        } catch (final ClassNotFoundError | NoSuchMethodError e) {
             return null;
         }
     }
@@ -570,7 +581,8 @@ public final class XposedHelpers {
      * Look up a constructor of a class and set it to accessible.
      * See {@link #findMethodExact(String, ClassLoader, String, Object...)} for details.
      */
-    public static Constructor<?> findConstructorExact(String className, ClassLoader classLoader, Object... parameterTypes) {
+    public static Constructor<?> findConstructorExact(final String className, final ClassLoader classLoader,
+                                                      final Object... parameterTypes) {
         return findConstructorExact(findClass(className, classLoader), getParameterClasses(classLoader, parameterTypes));
     }
 
@@ -578,10 +590,11 @@ public final class XposedHelpers {
      * Look up and return a constructor if it exists.
      * See {@link #findMethodExactIfExists(String, ClassLoader, String, Object...)} for details.
      */
-    public static Constructor<?> findConstructorExactIfExists(String className, ClassLoader classLoader, Object... parameterTypes) {
+    public static Constructor<?> findConstructorExactIfExists(final String className, final ClassLoader classLoader,
+                                                              final Object... parameterTypes) {
         try {
             return findConstructorExact(className, classLoader, parameterTypes);
-        } catch (ClassNotFoundError | NoSuchMethodError e) {
+        } catch (final ClassNotFoundError | NoSuchMethodError e) {
             return null;
         }
     }
@@ -590,22 +603,22 @@ public final class XposedHelpers {
      * Look up a constructor of a class and set it to accessible.
      * See {@link #findMethodExact(String, ClassLoader, String, Object...)} for details.
      */
-    public static Constructor<?> findConstructorExact(Class<?> clazz, Class<?>... parameterTypes) {
-        String fullConstructorName = clazz.getName() + getParametersString(parameterTypes) + "#exact";
+    public static Constructor<?> findConstructorExact(final Class<?> clazz, final Class<?>... parameterTypes) {
+        final String fullConstructorName = clazz.getName() + getParametersString(parameterTypes) + "#exact";
 
         if (constructorCache.containsKey(fullConstructorName)) {
-            Constructor<?> constructor = constructorCache.get(fullConstructorName);
+            final Constructor<?> constructor = constructorCache.get(fullConstructorName);
             if (constructor == null)
                 throw new NoSuchMethodError(fullConstructorName);
             return constructor;
         }
 
         try {
-            Constructor<?> constructor = clazz.getDeclaredConstructor(parameterTypes);
+            final Constructor<?> constructor = clazz.getDeclaredConstructor(parameterTypes);
             constructor.setAccessible(true);
             constructorCache.put(fullConstructorName, constructor);
             return constructor;
-        } catch (NoSuchMethodException e) {
+        } catch (final NoSuchMethodException e) {
             constructorCache.put(fullConstructorName, null);
             throw new NoSuchMethodError(fullConstructorName);
         }
@@ -615,12 +628,14 @@ public final class XposedHelpers {
      * Look up a constructor and hook it. See {@link #findAndHookMethod(String, ClassLoader, String, Object...)}
      * for details.
      */
-    public static XC_MethodHook.Unhook findAndHookConstructor(Class<?> clazz, Object... parameterTypesAndCallback) {
-        if (parameterTypesAndCallback.length == 0 || !(parameterTypesAndCallback[parameterTypesAndCallback.length - 1] instanceof XC_MethodHook))
+    public static XC_MethodHook.Unhook findAndHookConstructor(final Class<?> clazz,
+                                                              final Object... parameterTypesAndCallback) {
+        if (parameterTypesAndCallback.length == 0 ||
+                !(parameterTypesAndCallback[parameterTypesAndCallback.length - 1] instanceof XC_MethodHook))
             throw new IllegalArgumentException("no callback defined");
 
-        XC_MethodHook callback = (XC_MethodHook) parameterTypesAndCallback[parameterTypesAndCallback.length - 1];
-        Constructor<?> m = findConstructorExact(clazz, getParameterClasses(clazz.getClassLoader(), parameterTypesAndCallback));
+        final XC_MethodHook callback = (XC_MethodHook) parameterTypesAndCallback[parameterTypesAndCallback.length - 1];
+        final Constructor<?> m = findConstructorExact(clazz, getParameterClasses(clazz.getClassLoader(), parameterTypesAndCallback));
 
         return XposedBridge.hookMethod(m, callback);
     }
@@ -629,7 +644,9 @@ public final class XposedHelpers {
      * Look up a constructor and hook it. See {@link #findAndHookMethod(String, ClassLoader, String, Object...)}
      * for details.
      */
-    public static XC_MethodHook.Unhook findAndHookConstructor(String className, ClassLoader classLoader, Object... parameterTypesAndCallback) {
+    public static XC_MethodHook.Unhook findAndHookConstructor(final String className,
+                                                              final ClassLoader classLoader,
+                                                              final Object... parameterTypesAndCallback) {
         return findAndHookConstructor(findClass(className, classLoader), parameterTypesAndCallback);
     }
 
@@ -638,33 +655,31 @@ public final class XposedHelpers {
      * <p>
      * <p>See {@link #findMethodBestMatch(Class, String, Class...)} for details.
      */
-    public static Constructor<?> findConstructorBestMatch(Class<?> clazz, Class<?>... parameterTypes) {
-        String fullConstructorName = clazz.getName() + getParametersString(parameterTypes) + "#bestmatch";
+    public static Constructor<?> findConstructorBestMatch(final Class<?> clazz, final Class<?>... parameterTypes) {
+        final String fullConstructorName = clazz.getName() + getParametersString(parameterTypes) + "#bestmatch";
 
         if (constructorCache.containsKey(fullConstructorName)) {
-            Constructor<?> constructor = constructorCache.get(fullConstructorName);
+            final Constructor<?> constructor = constructorCache.get(fullConstructorName);
             if (constructor == null)
                 throw new NoSuchMethodError(fullConstructorName);
             return constructor;
         }
 
         try {
-            Constructor<?> constructor = findConstructorExact(clazz, parameterTypes);
+            final Constructor<?> constructor = findConstructorExact(clazz, parameterTypes);
             constructorCache.put(fullConstructorName, constructor);
             return constructor;
-        } catch (NoSuchMethodError ignored) {
+        } catch (final NoSuchMethodError ignored) {
         }
 
         Constructor<?> bestMatch = null;
-        Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+        final Constructor<?>[] constructors = clazz.getDeclaredConstructors();
         for (Constructor<?> constructor : constructors) {
             // compare name and parameters
             if (ClassUtils.isAssignable(parameterTypes, constructor.getParameterTypes(), true)) {
                 // get accessible version of method
-                if (bestMatch == null || MemberUtils.compareParameterTypes(
-                        constructor.getParameterTypes(),
-                        bestMatch.getParameterTypes(),
-                        parameterTypes) < 0) {
+                if (bestMatch == null ||
+                        MemberUtils.compareParameterTypes(constructor.getParameterTypes(), bestMatch.getParameterTypes(), parameterTypes) < 0) {
                     bestMatch = constructor;
                 }
             }
@@ -674,11 +689,10 @@ public final class XposedHelpers {
             bestMatch.setAccessible(true);
             constructorCache.put(fullConstructorName, bestMatch);
             return bestMatch;
-        } else {
-            NoSuchMethodError e = new NoSuchMethodError(fullConstructorName);
-            constructorCache.put(fullConstructorName, null);
-            throw e;
         }
+
+        constructorCache.put(fullConstructorName, null);
+        throw new NoSuchMethodError(fullConstructorName);
     }
 
     /**
@@ -687,7 +701,7 @@ public final class XposedHelpers {
      * <p>See {@link #findMethodBestMatch(Class, String, Class...)} for details. This variant
      * determines the parameter types from the classes of the given objects.
      */
-    public static Constructor<?> findConstructorBestMatch(Class<?> clazz, Object... args) {
+    public static Constructor<?> findConstructorBestMatch(final Class<?> clazz, final Object... args) {
         return findConstructorBestMatch(clazz, getParameterTypes(args));
     }
 
@@ -698,9 +712,10 @@ public final class XposedHelpers {
      * determines the parameter types from the classes of the given objects. For any item that is
      * {@code null}, the type is taken from {@code parameterTypes} instead.
      */
-    public static Constructor<?> findConstructorBestMatch(Class<?> clazz, Class<?>[] parameterTypes, Object[] args) {
+    public static Constructor<?> findConstructorBestMatch(final Class<?> clazz, final Class<?>[] parameterTypes,
+                                                          final Object[] args) {
         Class<?>[] argsClasses = null;
-        for (int i = 0; i < parameterTypes.length; i++) {
+        for (int i = 0; i < parameterTypes.length; ++i) {
             if (parameterTypes[i] != null)
                 continue;
             if (argsClasses == null)
@@ -718,11 +733,11 @@ public final class XposedHelpers {
     public static final class ClassNotFoundError extends Error {
         private static final long serialVersionUID = -1070936889459514628L;
 
-        public ClassNotFoundError(Throwable cause) {
+        public ClassNotFoundError(final Throwable cause) {
             super(cause);
         }
 
-        public ClassNotFoundError(String detailMessage, Throwable cause) {
+        public ClassNotFoundError(final String detailMessage, final Throwable cause) {
             super(detailMessage, cause);
         }
     }
@@ -732,10 +747,10 @@ public final class XposedHelpers {
      *
      * @throws NoSuchFieldError if there is no parameter with that type.
      */
-    public static int getFirstParameterIndexByType(Member method, Class<?> type) {
-        Class<?>[] classes = (method instanceof Method) ?
+    public static int getFirstParameterIndexByType(final Member method, final Class<?> type) {
+        final Class<?>[] classes = (method instanceof Method) ?
                 ((Method) method).getParameterTypes() : ((Constructor<?>) method).getParameterTypes();
-        for (int i = 0; i < classes.length; i++) {
+        for (int i = 0; i < classes.length; ++i) {
             if (classes[i] == type) {
                 return i;
             }
@@ -748,11 +763,11 @@ public final class XposedHelpers {
      *
      * @throws NoSuchFieldError if there is no or more than one parameter with that type.
      */
-    public static int getParameterIndexByType(Member method, Class<?> type) {
-        Class<?>[] classes = (method instanceof Method) ?
+    public static int getParameterIndexByType(final Member method, final Class<?> type) {
+        final Class<?>[] classes = (method instanceof Method) ?
                 ((Method) method).getParameterTypes() : ((Constructor<?>) method).getParameterTypes();
         int idx = -1;
-        for (int i = 0; i < classes.length; i++) {
+        for (int i = 0; i < classes.length; ++i) {
             if (classes[i] == type) {
                 if (idx == -1) {
                     idx = i;
@@ -773,14 +788,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of an object field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setObjectField(Object obj, String fieldName, Object value) {
+    public static void setObjectField(final Object obj, final String fieldName, final Object value) {
         try {
             findField(obj.getClass(), fieldName).set(obj, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -788,14 +803,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a {@code boolean} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setBooleanField(Object obj, String fieldName, boolean value) {
+    public static void setBooleanField(final Object obj, final String fieldName, final boolean value) {
         try {
             findField(obj.getClass(), fieldName).setBoolean(obj, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -803,14 +818,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a {@code byte} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setByteField(Object obj, String fieldName, byte value) {
+    public static void setByteField(final Object obj, final String fieldName, final byte value) {
         try {
             findField(obj.getClass(), fieldName).setByte(obj, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -818,14 +833,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a {@code char} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setCharField(Object obj, String fieldName, char value) {
+    public static void setCharField(final Object obj, final String fieldName, final char value) {
         try {
             findField(obj.getClass(), fieldName).setChar(obj, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -833,14 +848,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a {@code double} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setDoubleField(Object obj, String fieldName, double value) {
+    public static void setDoubleField(final Object obj, final String fieldName, final double value) {
         try {
             findField(obj.getClass(), fieldName).setDouble(obj, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -848,14 +863,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a {@code float} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setFloatField(Object obj, String fieldName, float value) {
+    public static void setFloatField(final Object obj, final String fieldName, final float value) {
         try {
             findField(obj.getClass(), fieldName).setFloat(obj, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -863,14 +878,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of an {@code int} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setIntField(Object obj, String fieldName, int value) {
+    public static void setIntField(Object obj, final String fieldName, int value) {
         try {
             findField(obj.getClass(), fieldName).setInt(obj, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -878,14 +893,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a {@code long} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setLongField(Object obj, String fieldName, long value) {
+    public static void setLongField(Object obj, final String fieldName, long value) {
         try {
             findField(obj.getClass(), fieldName).setLong(obj, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -893,14 +908,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a {@code short} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setShortField(Object obj, String fieldName, short value) {
+    public static void setShortField(Object obj, final String fieldName, short value) {
         try {
             findField(obj.getClass(), fieldName).setShort(obj, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -910,14 +925,14 @@ public final class XposedHelpers {
     /**
      * Returns the value of an object field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static Object getObjectField(Object obj, String fieldName) {
+    public static Object getObjectField(Object obj, final String fieldName) {
         try {
             return findField(obj.getClass(), fieldName).get(obj);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -933,14 +948,14 @@ public final class XposedHelpers {
      * Returns the value of a {@code boolean} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public static boolean getBooleanField(Object obj, String fieldName) {
+    public static boolean getBooleanField(Object obj, final String fieldName) {
         try {
             return findField(obj.getClass(), fieldName).getBoolean(obj);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -948,14 +963,14 @@ public final class XposedHelpers {
     /**
      * Returns the value of a {@code byte} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static byte getByteField(Object obj, String fieldName) {
+    public static byte getByteField(Object obj, final String fieldName) {
         try {
             return findField(obj.getClass(), fieldName).getByte(obj);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -963,14 +978,14 @@ public final class XposedHelpers {
     /**
      * Returns the value of a {@code char} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static char getCharField(Object obj, String fieldName) {
+    public static char getCharField(Object obj, final String fieldName) {
         try {
             return findField(obj.getClass(), fieldName).getChar(obj);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -978,14 +993,14 @@ public final class XposedHelpers {
     /**
      * Returns the value of a {@code double} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static double getDoubleField(Object obj, String fieldName) {
+    public static double getDoubleField(Object obj, final String fieldName) {
         try {
             return findField(obj.getClass(), fieldName).getDouble(obj);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -993,14 +1008,14 @@ public final class XposedHelpers {
     /**
      * Returns the value of a {@code float} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static float getFloatField(Object obj, String fieldName) {
+    public static float getFloatField(Object obj, final String fieldName) {
         try {
             return findField(obj.getClass(), fieldName).getFloat(obj);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1008,14 +1023,14 @@ public final class XposedHelpers {
     /**
      * Returns the value of an {@code int} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static int getIntField(Object obj, String fieldName) {
+    public static int getIntField(Object obj, final String fieldName) {
         try {
             return findField(obj.getClass(), fieldName).getInt(obj);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1023,14 +1038,14 @@ public final class XposedHelpers {
     /**
      * Returns the value of a {@code long} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static long getLongField(Object obj, String fieldName) {
+    public static long getLongField(Object obj, final String fieldName) {
         try {
             return findField(obj.getClass(), fieldName).getLong(obj);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1038,14 +1053,14 @@ public final class XposedHelpers {
     /**
      * Returns the value of a {@code short} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static short getShortField(Object obj, String fieldName) {
+    public static short getShortField(Object obj, final String fieldName) {
         try {
             return findField(obj.getClass(), fieldName).getShort(obj);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1055,14 +1070,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static object field in the given class. See also {@link #findField}.
      */
-    public static void setStaticObjectField(Class<?> clazz, String fieldName, Object value) {
+    public static void setStaticObjectField(final Class<?> clazz, final String fieldName, final Object value) {
         try {
             findField(clazz, fieldName).set(null, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1070,14 +1085,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code boolean} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticBooleanField(Class<?> clazz, String fieldName, boolean value) {
+    public static void setStaticBooleanField(final Class<?> clazz, final String fieldName, final boolean value) {
         try {
             findField(clazz, fieldName).setBoolean(null, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1085,14 +1100,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code byte} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticByteField(Class<?> clazz, String fieldName, byte value) {
+    public static void setStaticByteField(final Class<?> clazz, final String fieldName, byte value) {
         try {
             findField(clazz, fieldName).setByte(null, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1100,14 +1115,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code char} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticCharField(Class<?> clazz, String fieldName, char value) {
+    public static void setStaticCharField(final Class<?> clazz, final String fieldName, char value) {
         try {
             findField(clazz, fieldName).setChar(null, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1115,14 +1130,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code double} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticDoubleField(Class<?> clazz, String fieldName, double value) {
+    public static void setStaticDoubleField(final Class<?> clazz, final String fieldName, double value) {
         try {
             findField(clazz, fieldName).setDouble(null, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1130,14 +1145,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code float} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticFloatField(Class<?> clazz, String fieldName, float value) {
+    public static void setStaticFloatField(final Class<?> clazz, final String fieldName, float value) {
         try {
             findField(clazz, fieldName).setFloat(null, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1145,14 +1160,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code int} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticIntField(Class<?> clazz, String fieldName, int value) {
+    public static void setStaticIntField(final Class<?> clazz, final String fieldName, int value) {
         try {
             findField(clazz, fieldName).setInt(null, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1160,14 +1175,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code long} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticLongField(Class<?> clazz, String fieldName, long value) {
+    public static void setStaticLongField(final Class<?> clazz, final String fieldName, long value) {
         try {
             findField(clazz, fieldName).setLong(null, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1175,14 +1190,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code short} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticShortField(Class<?> clazz, String fieldName, short value) {
+    public static void setStaticShortField(final Class<?> clazz, final String fieldName, short value) {
         try {
             findField(clazz, fieldName).setShort(null, value);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1192,14 +1207,14 @@ public final class XposedHelpers {
     /**
      * Returns the value of a static object field in the given class. See also {@link #findField}.
      */
-    public static Object getStaticObjectField(Class<?> clazz, String fieldName) {
+    public static Object getStaticObjectField(final Class<?> clazz, final String fieldName) {
         try {
             return findField(clazz, fieldName).get(null);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1207,14 +1222,14 @@ public final class XposedHelpers {
     /**
      * Returns the value of a static {@code boolean} field in the given class. See also {@link #findField}.
      */
-    public static boolean getStaticBooleanField(Class<?> clazz, String fieldName) {
+    public static boolean getStaticBooleanField(final Class<?> clazz, final String fieldName) {
         try {
             return findField(clazz, fieldName).getBoolean(null);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1222,14 +1237,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code byte} field in the given class. See also {@link #findField}.
      */
-    public static byte getStaticByteField(Class<?> clazz, String fieldName) {
+    public static byte getStaticByteField(final Class<?> clazz, final String fieldName) {
         try {
             return findField(clazz, fieldName).getByte(null);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1237,14 +1252,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code char} field in the given class. See also {@link #findField}.
      */
-    public static char getStaticCharField(Class<?> clazz, String fieldName) {
+    public static char getStaticCharField(final Class<?> clazz, final String fieldName) {
         try {
             return findField(clazz, fieldName).getChar(null);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1252,14 +1267,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code double} field in the given class. See also {@link #findField}.
      */
-    public static double getStaticDoubleField(Class<?> clazz, String fieldName) {
+    public static double getStaticDoubleField(final Class<?> clazz, final String fieldName) {
         try {
             return findField(clazz, fieldName).getDouble(null);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1267,14 +1282,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code float} field in the given class. See also {@link #findField}.
      */
-    public static float getStaticFloatField(Class<?> clazz, String fieldName) {
+    public static float getStaticFloatField(final Class<?> clazz, final String fieldName) {
         try {
             return findField(clazz, fieldName).getFloat(null);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1282,14 +1297,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code int} field in the given class. See also {@link #findField}.
      */
-    public static int getStaticIntField(Class<?> clazz, String fieldName) {
+    public static int getStaticIntField(final Class<?> clazz, final String fieldName) {
         try {
             return findField(clazz, fieldName).getInt(null);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1297,14 +1312,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code long} field in the given class. See also {@link #findField}.
      */
-    public static long getStaticLongField(Class<?> clazz, String fieldName) {
+    public static long getStaticLongField(final Class<?> clazz, final String fieldName) {
         try {
             return findField(clazz, fieldName).getLong(null);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1312,14 +1327,14 @@ public final class XposedHelpers {
     /**
      * Sets the value of a static {@code short} field in the given class. See also {@link #findField}.
      */
-    public static short getStaticShortField(Class<?> clazz, String fieldName) {
+    public static short getStaticShortField(final Class<?> clazz, final String fieldName) {
         try {
             return findField(clazz, fieldName).getShort(null);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
         }
     }
@@ -1336,16 +1351,16 @@ public final class XposedHelpers {
      * @throws NoSuchMethodError     In case no suitable method was found.
      * @throws InvocationTargetError In case an exception was thrown by the invoked method.
      */
-    public static Object callMethod(Object obj, String methodName, Object... args) {
+    public static Object callMethod(final Object obj, final String methodName, final Object... args) {
         try {
             return findMethodBestMatch(obj.getClass(), methodName, args).invoke(obj, args);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
-        } catch (InvocationTargetException e) {
+        } catch (final InvocationTargetException e) {
             throw new InvocationTargetError(e.getCause());
         }
     }
@@ -1357,16 +1372,17 @@ public final class XposedHelpers {
      * <p>This variant allows you to specify parameter types, which can help in case there are multiple
      * methods with the same name, especially if you call it with {@code null} parameters.
      */
-    public static Object callMethod(Object obj, String methodName, Class<?>[] parameterTypes, Object... args) {
+    public static Object callMethod(final Object obj, final String methodName,
+                                    final Class<?>[] parameterTypes, final Object... args) {
         try {
             return findMethodBestMatch(obj.getClass(), methodName, parameterTypes, args).invoke(obj, args);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
-        } catch (InvocationTargetException e) {
+        } catch (final InvocationTargetException e) {
             throw new InvocationTargetError(e.getCause());
         }
     }
@@ -1381,16 +1397,16 @@ public final class XposedHelpers {
      * @throws NoSuchMethodError     In case no suitable method was found.
      * @throws InvocationTargetError In case an exception was thrown by the invoked method.
      */
-    public static Object callStaticMethod(Class<?> clazz, String methodName, Object... args) {
+    public static Object callStaticMethod(final Class<?> clazz, final String methodName, final Object... args) {
         try {
             return findMethodBestMatch(clazz, methodName, args).invoke(null, args);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
-        } catch (InvocationTargetException e) {
+        } catch (final InvocationTargetException e) {
             throw new InvocationTargetError(e.getCause());
         }
     }
@@ -1402,16 +1418,17 @@ public final class XposedHelpers {
      * <p>This variant allows you to specify parameter types, which can help in case there are multiple
      * methods with the same name, especially if you call it with {@code null} parameters.
      */
-    public static Object callStaticMethod(Class<?> clazz, String methodName, Class<?>[] parameterTypes, Object... args) {
+    public static Object callStaticMethod(final Class<?> clazz, final String methodName,
+                                          final Class<?>[] parameterTypes, final Object... args) {
         try {
             return findMethodBestMatch(clazz, methodName, parameterTypes, args).invoke(null, args);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
-        } catch (InvocationTargetException e) {
+        } catch (final InvocationTargetException e) {
             throw new InvocationTargetError(e.getCause());
         }
     }
@@ -1443,18 +1460,18 @@ public final class XposedHelpers {
      * @throws InvocationTargetError In case an exception was thrown by the invoked method.
      * @throws InstantiationError    In case the class cannot be instantiated.
      */
-    public static Object newInstance(Class<?> clazz, Object... args) {
+    public static Object newInstance(final Class<?> clazz, final Object... args) {
         try {
             return findConstructorBestMatch(clazz, args).newInstance(args);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
-        } catch (InvocationTargetException e) {
+        } catch (final InvocationTargetException e) {
             throw new InvocationTargetError(e.getCause());
-        } catch (InstantiationException e) {
+        } catch (final InstantiationException e) {
             throw new InstantiationError(e.getMessage());
         }
     }
@@ -1466,18 +1483,19 @@ public final class XposedHelpers {
      * <p>This variant allows you to specify parameter types, which can help in case there are multiple
      * constructors with the same name, especially if you call it with {@code null} parameters.
      */
-    public static Object newInstance(Class<?> clazz, Class<?>[] parameterTypes, Object... args) {
+    public static Object newInstance(final Class<?> clazz, final Class<?>[] parameterTypes,
+                                     final Object... args) {
         try {
             return findConstructorBestMatch(clazz, parameterTypes, args).newInstance(args);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             // should not happen
             Log.w(LOGTAG, e);
             throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw e;
-        } catch (InvocationTargetException e) {
+        } catch (final InvocationTargetException e) {
             throw new InvocationTargetError(e.getCause());
-        } catch (InstantiationException e) {
+        } catch (final InstantiationException e) {
             throw new InstantiationError(e.getMessage());
         }
     }
@@ -1494,7 +1512,7 @@ public final class XposedHelpers {
      * @return The previously stored value for this instance/key combination, or {@code null} if there was none.
      */
     @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
-    public static Object setAdditionalInstanceField(Object obj, String key, Object value) {
+    public static Object setAdditionalInstanceField(final Object obj, final String key, final Object value) {
         if (obj == null)
             throw new NullPointerException("object must not be null");
         if (key == null)
@@ -1522,7 +1540,7 @@ public final class XposedHelpers {
      * @return The stored value for this instance/key combination, or {@code null} if there is none.
      */
     @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
-    public static Object getAdditionalInstanceField(Object obj, String key) {
+    public static Object getAdditionalInstanceField(final Object obj, final String key) {
         if (obj == null)
             throw new NullPointerException("object must not be null");
         if (key == null)
@@ -1548,7 +1566,7 @@ public final class XposedHelpers {
      * @return The previously stored value for this instance/key combination, or {@code null} if there was none.
      */
     @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
-    public static Object removeAdditionalInstanceField(Object obj, String key) {
+    public static Object removeAdditionalInstanceField(final Object obj, final String key) {
         if (obj == null)
             throw new NullPointerException("object must not be null");
         if (key == null)
@@ -1569,42 +1587,44 @@ public final class XposedHelpers {
     /**
      * Like {@link #setAdditionalInstanceField}, but the value is stored for the class of {@code obj}.
      */
-    public static Object setAdditionalStaticField(Object obj, String key, Object value) {
+    public static Object setAdditionalStaticField(final Object obj, final String key,
+                                                  final Object value) {
         return setAdditionalInstanceField(obj.getClass(), key, value);
     }
 
     /**
      * Like {@link #getAdditionalInstanceField}, but the value is returned for the class of {@code obj}.
      */
-    public static Object getAdditionalStaticField(Object obj, String key) {
+    public static Object getAdditionalStaticField(final Object obj, final String key) {
         return getAdditionalInstanceField(obj.getClass(), key);
     }
 
     /**
      * Like {@link #removeAdditionalInstanceField}, but the value is removed and returned for the class of {@code obj}.
      */
-    public static Object removeAdditionalStaticField(Object obj, String key) {
+    public static Object removeAdditionalStaticField(final Object obj, final String key) {
         return removeAdditionalInstanceField(obj.getClass(), key);
     }
 
     /**
      * Like {@link #setAdditionalInstanceField}, but the value is stored for {@code clazz}.
      */
-    public static Object setAdditionalStaticField(Class<?> clazz, String key, Object value) {
+    public static Object setAdditionalStaticField(final Class<?> clazz, final String key,
+                                                  final Object value) {
         return setAdditionalInstanceField(clazz, key, value);
     }
 
     /**
      * Like {@link #setAdditionalInstanceField}, but the value is returned for {@code clazz}.
      */
-    public static Object getAdditionalStaticField(Class<?> clazz, String key) {
+    public static Object getAdditionalStaticField(final Class<?> clazz, final String key) {
         return getAdditionalInstanceField(clazz, key);
     }
 
     /**
      * Like {@link #setAdditionalInstanceField}, but the value is removed and returned for {@code clazz}.
      */
-    public static Object removeAdditionalStaticField(Class<?> clazz, String key) {
+    public static Object removeAdditionalStaticField(final Class<?> clazz, final String key) {
         return removeAdditionalInstanceField(clazz, key);
     }
 
@@ -1617,16 +1637,15 @@ public final class XposedHelpers {
      * @param path The path to the asset, as in {@link AssetManager#open}.
      * @return The content of the asset.
      */
-    public static byte[] assetAsByteArray(Resources res, String path) throws IOException {
+    public static byte[] assetAsByteArray(final Resources res, final String path) throws IOException {
         return inputStreamToByteArray(res.getAssets().open(path));
     }
 
     /*package*/
-    static byte[] inputStreamToByteArray(InputStream is) throws IOException {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        byte[] temp = new byte[1024];
+    static byte[] inputStreamToByteArray(final InputStream is) throws IOException {
+        final ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        final byte[] temp = new byte[1024];
         int read;
-
         while ((read = is.read(temp)) > 0) {
             buf.write(temp, 0, read);
         }
@@ -1638,11 +1657,11 @@ public final class XposedHelpers {
      * Invokes the {@link Closeable#close()} method, ignoring IOExceptions.
      */
     /*package*/
-    static void closeSilently(Closeable c) {
+    static void closeSilently(final Closeable c) {
         if (c != null) {
             try {
                 c.close();
-            } catch (IOException ignored) {
+            } catch (final IOException ignored) {
             }
         }
     }
@@ -1656,7 +1675,7 @@ public final class XposedHelpers {
         if (dexFile != null) {
             try {
                 dexFile.close();
-            } catch (IOException ignored) {
+            } catch (final IOException ignored) {
             }
         }
     }
@@ -1669,7 +1688,7 @@ public final class XposedHelpers {
         if (zipFile != null) {
             try {
                 zipFile.close();
-            } catch (IOException ignored) {
+            } catch (final IOException ignored) {
             }
         }
     }
@@ -1677,20 +1696,20 @@ public final class XposedHelpers {
     /**
      * Returns the lowercase hex string representation of a file's MD5 hash sum.
      */
-    public static String getMD5Sum(String file) throws IOException {
+    public static String getMD5Sum(final String file) throws IOException {
         try {
-            MessageDigest digest = MessageDigest.getInstance("MD5");
-            InputStream is = new FileInputStream(file);
-            byte[] buffer = new byte[8192];
+            final MessageDigest digest = MessageDigest.getInstance("MD5");
+            final InputStream is = new FileInputStream(file);
+            final byte[] buffer = new byte[8192];
             int read;
             while ((read = is.read(buffer)) > 0) {
                 digest.update(buffer, 0, read);
             }
             is.close();
-            byte[] md5sum = digest.digest();
-            BigInteger bigInt = new BigInteger(1, md5sum);
+            final byte[] md5sum = digest.digest();
+            final BigInteger bigInt = new BigInteger(1, md5sum);
             return bigInt.toString(16);
-        } catch (NoSuchAlgorithmException e) {
+        } catch (final NoSuchAlgorithmException e) {
             return "";
         }
     }
@@ -1708,7 +1727,7 @@ public final class XposedHelpers {
      * @param method The method name. Should be prefixed with a unique, module-specific string.
      * @return The updated depth.
      */
-    public static int incrementMethodDepth(String method) {
+    public static int incrementMethodDepth(final String method) {
         return getMethodDepthCounter(method).get().incrementAndGet();
     }
 
@@ -1719,7 +1738,7 @@ public final class XposedHelpers {
      * @param method The method name. Should be prefixed with a unique, module-specific string.
      * @return The updated depth.
      */
-    public static int decrementMethodDepth(String method) {
+    public static int decrementMethodDepth(final String method) {
         return getMethodDepthCounter(method).get().decrementAndGet();
     }
 
@@ -1730,11 +1749,11 @@ public final class XposedHelpers {
      * @param method The method name. Should be prefixed with a unique, module-specific string.
      * @return The updated depth.
      */
-    public static int getMethodDepth(String method) {
+    public static int getMethodDepth(final String method) {
         return getMethodDepthCounter(method).get().get();
     }
 
-    private static ThreadLocal<AtomicInteger> getMethodDepthCounter(String method) {
+    private static ThreadLocal<AtomicInteger> getMethodDepthCounter(final String method) {
         synchronized (sMethodDepth) {
             ThreadLocal<AtomicInteger> counter = sMethodDepth.get(method);
             if (counter == null) {
@@ -1752,7 +1771,7 @@ public final class XposedHelpers {
 
     /*package*/
     @SuppressWarnings("resource")
-    static boolean fileContains(File file, String str) throws IOException {
+    static boolean fileContains(final File file, final String str) throws IOException {
         // There are certainly more efficient algorithms (e.g. Boyer-Moore used in grep),
         // but the naive approach should be sufficient here.
         BufferedReader in = null;
@@ -1778,25 +1797,25 @@ public final class XposedHelpers {
      * abstract, i.e. if this is the first implementation in the hierarchy.
      */
     /*package*/
-    static Method getOverriddenMethod(Method method) {
+    static Method getOverriddenMethod(final Method method) {
         int modifiers = method.getModifiers();
         if (Modifier.isStatic(modifiers) || Modifier.isPrivate(modifiers)) {
             return null;
         }
 
-        String name = method.getName();
-        Class<?>[] parameters = method.getParameterTypes();
+        final String name = method.getName();
+        final Class<?>[] parameters = method.getParameterTypes();
         Class<?> clazz = method.getDeclaringClass().getSuperclass();
         while (clazz != null) {
             try {
-                Method superMethod = clazz.getDeclaredMethod(name, parameters);
+                final Method superMethod = clazz.getDeclaredMethod(name, parameters);
                 modifiers = superMethod.getModifiers();
                 if (!Modifier.isPrivate(modifiers) && !Modifier.isAbstract(modifiers)) {
                     return superMethod;
                 } else {
                     return null;
                 }
-            } catch (NoSuchMethodException ignored) {
+            } catch (final NoSuchMethodException ignored) {
                 clazz = clazz.getSuperclass();
             }
         }
@@ -1807,10 +1826,10 @@ public final class XposedHelpers {
      * Returns all methods which this class overrides.
      */
     /*package*/
-    static Set<Method> getOverriddenMethods(Class<?> clazz) {
-        Set<Method> methods = new HashSet<>();
-        for (Method method : clazz.getDeclaredMethods()) {
-            Method overridden = getOverriddenMethod(method);
+    static HashSet<Method> getOverriddenMethods(final Class<?> clazz) {
+        final HashSet<Method> methods = new HashSet<>();
+        for (final Method method : clazz.getDeclaredMethods()) {
+            final Method overridden = getOverriddenMethod(method);
             if (overridden != null) {
                 methods.add(overridden);
             }

@@ -13,7 +13,7 @@ import android.util.Pair;
 
 /**
  * @author rrrfff
- * @version 3.1.0
+ * @version 3.1.1
  */
 @SuppressWarnings({"unused", "WeakerAccess", "JniMissingFunction"})
 public final class AndHook {
@@ -539,9 +539,9 @@ public final class AndHook {
                                 AndHook.ensureClassInitialized(clazz);
                             }
                             if (hookInfo.need_origin()) {
-                                hook(origin, hookMethod);
+                                HookHelper.hook(origin, hookMethod);
                             } else {
-                                hookNoBackup(origin, hookMethod);
+                                AndHook.hookNoBackup(origin, hookMethod);
                             }
                         }
                     } catch (final Exception e) {

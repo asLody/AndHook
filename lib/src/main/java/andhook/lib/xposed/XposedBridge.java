@@ -82,7 +82,7 @@ public final class XposedBridge {
         }
 
         if (additionalInfo == null) {
-        	if (Modifier.isStatic(hookMethod.getModifiers()))
+            if (Modifier.isStatic(hookMethod.getModifiers()))
                 AndHook.ensureClassInitialized(hookMethod.getDeclaringClass());
             additionalInfo = new AdditionalHookInfo(hookMethod, AndHook.backup(hookMethod));
             if (additionalInfo.slot == -1)
@@ -96,7 +96,6 @@ public final class XposedBridge {
         } else {
             additionalInfo.callbacks.add(callback);
         }
-
 
         return callback.new Unhook(additionalInfo.method, additionalInfo.slot);
     }
@@ -123,7 +122,7 @@ public final class XposedBridge {
 
     /**
      * Removes hook for the specified method/constructor.
-     * 
+     * <p>
      * AndHook extension function.
      */
     public static boolean unhookMethod(final int slot, final Member hookMethod) {
@@ -137,21 +136,22 @@ public final class XposedBridge {
      * Hooks all methods that were declared in the specified class. Inherited
      * methods and constructors are not considered. For constructors, use
      * {@link #hookAllConstructors} instead.
-     * 
+     * <p>
      * AndHook extension function.
      *
-     * @param hookClass  The class to check for declared methods.
-     * @param callback   The callback to be executed when the hooked methods are called.
+     * @param hookClass The class to check for declared methods.
+     * @param callback  The callback to be executed when the hooked methods are called.
      * @return A set containing one object for each found method which can be used to unhook it.
      */
     @SuppressWarnings("all")
-    public static HashSet<XC_MethodHook.Unhook> hookAllMethods(final Class<?> hookClass, final XC_MethodHook callback) {
+    public static HashSet<XC_MethodHook.Unhook> hookAllMethods(final Class<?> hookClass,
+                                                               final XC_MethodHook callback) {
         final HashSet<XC_MethodHook.Unhook> unhooks = new HashSet<>();
         for (final Member method : hookClass.getDeclaredMethods())
             unhooks.add(hookMethod(method, callback));
         return unhooks;
     }
-    
+
     /**
      * Hooks all methods with a certain name that were declared in the specified class. Inherited
      * methods and constructors are not considered. For constructors, use
@@ -163,7 +163,9 @@ public final class XposedBridge {
      * @return A set containing one object for each found method which can be used to unhook it.
      */
     @SuppressWarnings("all")
-    public static HashSet<XC_MethodHook.Unhook> hookAllMethods(final Class<?> hookClass, final String methodName, final XC_MethodHook callback) {
+    public static HashSet<XC_MethodHook.Unhook> hookAllMethods(final Class<?> hookClass,
+                                                               final String methodName,
+                                                               final XC_MethodHook callback) {
         final HashSet<XC_MethodHook.Unhook> unhooks = new HashSet<>();
         for (final Member method : hookClass.getDeclaredMethods())
             if (method.getName().equals(methodName))
@@ -179,9 +181,10 @@ public final class XposedBridge {
      * @return A set containing one object for each found constructor which can be used to unhook it.
      */
     @SuppressWarnings("all")
-    public static HashSet<XC_MethodHook.Unhook> hookAllConstructors(final Class<?> hookClass, final XC_MethodHook callback) {
+    public static HashSet<XC_MethodHook.Unhook> hookAllConstructors(final Class<?> hookClass,
+                                                                    final XC_MethodHook callback) {
         final HashSet<XC_MethodHook.Unhook> unhooks = new HashSet<>();
-        for (Member constructor : hookClass.getDeclaredConstructors())
+        for (final Member constructor : hookClass.getDeclaredConstructors())
             unhooks.add(hookMethod(constructor, callback));
         return unhooks;
     }
@@ -267,10 +270,10 @@ public final class XposedBridge {
      * the method and call {@code param.setResult(null)} in {@link XC_MethodHook#beforeHookedMethod}
      * if the original method should be skipped.
      */
-    public static Object invokeOriginalMethod(final int slot, final Object thisObject, final Object[] args) {
+    public static Object invokeOriginalMethod(final int slot, final Object thisObject,
+                                              final Object[] args) {
         return AndHook.invokeMethod(slot, thisObject, args);
     }
-
 
     public static final class CopyOnWriteSortedSet<E> {
         private transient volatile Object[] elements = EMPTY_ARRAY;

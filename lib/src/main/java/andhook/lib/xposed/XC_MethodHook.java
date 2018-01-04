@@ -29,7 +29,7 @@ public class XC_MethodHook extends XCallback {
      *
      * @param priority See {@link XCallback#priority}.
      */
-    public XC_MethodHook(int priority) {
+    public XC_MethodHook(final int priority) {
         super(priority);
     }
 
