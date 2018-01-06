@@ -13,7 +13,7 @@ import android.util.Pair;
 
 /**
  * @author rrrfff
- * @version 3.1.1
+ * @version 3.1.2
  */
 @SuppressWarnings({"unused", "WeakerAccess", "JniMissingFunction"})
 public final class AndHook {
@@ -77,14 +77,13 @@ public final class AndHook {
         hook(clazz, name, signature, extra, -1);
     }
 
-
     public static native boolean restore(final int slot, final Member origin);
 
     public static native boolean suspendAll();
 
     public static native void resumeAll();
 
-    public static native void ensureClassInitialized(final Class<?> origin);
+    public static native boolean ensureClassInitialized(final Class<?> origin);
 
     public static native void enableFastDexLoad(final boolean enable);
 
@@ -199,7 +198,6 @@ public final class AndHook {
         }
     }
 
-
     /**
      * Returns the result of dynamically invoking this method. Equivalent to
      * {@code receiver.methodName(arg1, arg2, ... , argN)}.
@@ -212,8 +210,12 @@ public final class AndHook {
      */
     @SuppressWarnings("unchecked")
     public static <T> T invokeMethod(final int slot, final Object receiver,
-                                     final Object... params) {
-        return (T) invoke(slot, receiver, params);
+                                     final Object... params) throws Throwable {
+        try {
+            return (T) invoke(slot, receiver, params);
+        } catch (final Throwable t) {
+            throw t.getCause();
+        }
     }
 
     public static final class HookHelper {

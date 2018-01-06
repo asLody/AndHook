@@ -5,7 +5,6 @@ import andhook.lib.xposed.XC_MethodHook.MethodHookParam;
 
 import android.util.Log;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -200,11 +199,7 @@ public final class XposedBridge {
         final Object[] callbacksSnapshot = additionalInfo.callbacks.getSnapshot();
         final int callbacksLength = callbacksSnapshot.length;
         if (callbacksLength == 0) {
-            try {
-                return invokeOriginalMethod(additionalInfo.slot, thisObject, args);
-            } catch (final InvocationTargetException e) {
-                throw e.getCause();
-            }
+            return invokeOriginalMethod(additionalInfo.slot, thisObject, args);
         }
 
         final MethodHookParam param = new MethodHookParam();
@@ -238,8 +233,8 @@ public final class XposedBridge {
         if (!param.returnEarly) {
             try {
                 param.setResult(invokeOriginalMethod(additionalInfo.slot, param.thisObject, param.args));
-            } catch (final InvocationTargetException e) {
-                param.setThrowable(e.getCause());
+            } catch (final Throwable t) {
+                param.setThrowable(t);
             }
         }
 
@@ -280,7 +275,7 @@ public final class XposedBridge {
      * if the original method should be skipped.
      */
     public static Object invokeOriginalMethod(final int slot, final Object thisObject,
-                                              final Object[] args) throws InvocationTargetException {
+                                              final Object[] args) throws Throwable {
         return AndHook.invokeMethod(slot, thisObject, args);
     }
 
