@@ -5,6 +5,7 @@ import andhook.lib.xposed.XC_MethodHook.MethodHookParam;
 
 import android.util.Log;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -199,7 +200,11 @@ public final class XposedBridge {
         final Object[] callbacksSnapshot = additionalInfo.callbacks.getSnapshot();
         final int callbacksLength = callbacksSnapshot.length;
         if (callbacksLength == 0) {
-            return invokeOriginalMethod(additionalInfo.slot, thisObject, args);
+            try {
+                return invokeOriginalMethod(additionalInfo.slot, thisObject, args);
+            } catch (final InvocationTargetException e) {
+                throw e.getCause();
+            }
         }
 
         final MethodHookParam param = new MethodHookParam();
@@ -213,7 +218,7 @@ public final class XposedBridge {
         do {
             try {
                 ((XC_MethodHook) callbacksSnapshot[beforeIdx]).beforeHookedMethod(param);
-            } catch (Throwable t) {
+            } catch (final Throwable t) {
                 XposedBridge.log(t);
 
                 // reset result (ignoring what the unexpectedly exiting callback did)
@@ -231,7 +236,11 @@ public final class XposedBridge {
 
         // call original method if not requested otherwise
         if (!param.returnEarly) {
-            param.setResult(invokeOriginalMethod(additionalInfo.slot, param.thisObject, param.args));
+            try {
+                param.setResult(invokeOriginalMethod(additionalInfo.slot, param.thisObject, param.args));
+            } catch (final InvocationTargetException e) {
+                param.setThrowable(e.getCause());
+            }
         }
 
         // call "after method" callbacks
@@ -242,7 +251,7 @@ public final class XposedBridge {
 
             try {
                 ((XC_MethodHook) callbacksSnapshot[afterIdx]).afterHookedMethod(param);
-            } catch (Throwable t) {
+            } catch (final Throwable t) {
                 XposedBridge.log(t);
 
                 // reset to last result (ignoring what the unexpectedly exiting callback did)
@@ -271,7 +280,7 @@ public final class XposedBridge {
      * if the original method should be skipped.
      */
     public static Object invokeOriginalMethod(final int slot, final Object thisObject,
-                                              final Object[] args) {
+                                              final Object[] args) throws InvocationTargetException {
         return AndHook.invokeMethod(slot, thisObject, args);
     }
 
