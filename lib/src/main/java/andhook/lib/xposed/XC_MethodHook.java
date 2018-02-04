@@ -110,7 +110,7 @@ public class XC_MethodHook extends XCallback {
          * <p>
          * <p>If called from {@link #beforeHookedMethod}, it prevents the call to the original method.
          */
-        public void setResult(Object result) {
+        public void setResult(final Object result) {
             this.result = result;
             this.throwable = null;
             this.returnEarly = true;
@@ -135,7 +135,7 @@ public class XC_MethodHook extends XCallback {
          * <p>
          * <p>If called from {@link #beforeHookedMethod}, it prevents the call to the original method.
          */
-        public void setThrowable(Throwable throwable) {
+        public void setThrowable(final Throwable throwable) {
             this.throwable = throwable;
             this.result = null;
             this.returnEarly = true;

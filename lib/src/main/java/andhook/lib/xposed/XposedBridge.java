@@ -10,12 +10,14 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class contains most of Xposed's central logic, such as initialization and callbacks used by
  * the native side. It also includes methods to add new hooks.
+ * <p>
+ * Latest Update 2018/01/20
  */
 @SuppressWarnings("WeakerAccess")
 public final class XposedBridge {
@@ -33,7 +35,7 @@ public final class XposedBridge {
     private static final Object[] EMPTY_ARRAY = new Object[0];
 
     // built-in handlers
-    private static final HashMap<Member, AdditionalHookInfo> sHookedMethodInfos = new HashMap<>();
+    private static final ConcurrentHashMap<Member, AdditionalHookInfo> sHookedMethodInfos = new ConcurrentHashMap<>();
 
     /**
      * Writes a message to the logcat error log.
@@ -70,17 +72,11 @@ public final class XposedBridge {
     public static XC_MethodHook.Unhook hookMethod(final Member hookMethod, final XC_MethodHook callback) {
         if (!(hookMethod instanceof Method) && !(hookMethod instanceof Constructor<?>)) {
             throw new IllegalArgumentException("Only methods and constructors can be hooked: " + hookMethod.toString());
-        } else if (hookMethod.getDeclaringClass().isInterface()) {
-            throw new IllegalArgumentException("Cannot hook interfaces: " + hookMethod.toString());
         } else if (Modifier.isAbstract(hookMethod.getModifiers())) {
             throw new IllegalArgumentException("Cannot hook abstract methods: " + hookMethod.toString());
         }
 
-        AdditionalHookInfo additionalInfo;
-        synchronized (sHookedMethodInfos) {
-            additionalInfo = sHookedMethodInfos.get(hookMethod);
-        }
-
+        AdditionalHookInfo additionalInfo = sHookedMethodInfos.get(hookMethod);
         if (additionalInfo == null) {
             if (Modifier.isStatic(hookMethod.getModifiers()))
                 AndHook.ensureClassInitialized(hookMethod.getDeclaringClass());
@@ -88,12 +84,16 @@ public final class XposedBridge {
             if (additionalInfo.slot == -1)
                 throw new RuntimeException("Failed to backup methods: " + hookMethod.toString());
 
-            sHookedMethodInfos.put(hookMethod, additionalInfo);
             additionalInfo.callbacks.add(callback);
             if (!AndHook.hook(hookMethod, additionalInfo, additionalInfo.slot))
                 throw new RuntimeException("Failed to hook methods: " + hookMethod.toString());
 
+            sHookedMethodInfos.put(hookMethod, additionalInfo);
         } else {
+            // sanity check
+            if (!additionalInfo.method.getDeclaringClass().getClassLoader().equals(hookMethod.getDeclaringClass().getClassLoader())) {
+                throw new RuntimeException("Unexpected same methods within difference CL: " + hookMethod.toString());
+            }
             additionalInfo.callbacks.add(callback);
         }
 
@@ -111,10 +111,7 @@ public final class XposedBridge {
     @SuppressWarnings("all")
     @Deprecated
     public static void unhookMethod(final Member hookMethod, final XC_MethodHook callback) {
-        AdditionalHookInfo additionalInfo;
-        synchronized (sHookedMethodInfos) {
-            additionalInfo = sHookedMethodInfos.get(hookMethod);
-        }
+        final AdditionalHookInfo additionalInfo = sHookedMethodInfos.get(hookMethod);
         if (additionalInfo != null) {
             additionalInfo.callbacks.remove(callback);
         }
@@ -126,9 +123,7 @@ public final class XposedBridge {
      * AndHook extension function.
      */
     public static boolean unhookMethod(final int slot, final Member hookMethod) {
-        synchronized (sHookedMethodInfos) {
-            sHookedMethodInfos.remove(hookMethod);
-        }
+        sHookedMethodInfos.remove(hookMethod);
         return AndHook.restore(slot, hookMethod);
     }
 
@@ -192,6 +187,7 @@ public final class XposedBridge {
     /**
      * This method is called as a replacement for hooked methods.
      */
+    @SuppressWarnings("unused")
     private static Object handleHookedMethod(final Object additionalInfoObj,
                                              final Object thisObject, final Object[] args) throws Throwable {
         final AdditionalHookInfo additionalInfo = (AdditionalHookInfo) additionalInfoObj;
@@ -275,7 +271,7 @@ public final class XposedBridge {
      * if the original method should be skipped.
      */
     public static Object invokeOriginalMethod(final int slot, final Object thisObject,
-                                              final Object[] args) throws Throwable {
+                                              final Object[] args) {
         return AndHook.invokeMethod(slot, thisObject, args);
     }
 
@@ -338,15 +334,6 @@ public final class XposedBridge {
             this.callbacks = new CopyOnWriteSortedSet<>();
             this.method = method;
             this.slot = slot;
-        }
-
-        /**
-         * AndHook method bridge.
-         */
-        @SuppressWarnings("unused")
-        private static Object bridge(final Object thiz, final Object receiver, final Object[] args)
-                throws Throwable {
-            return XposedBridge.handleHookedMethod(thiz, receiver, args);
         }
     }
 }
