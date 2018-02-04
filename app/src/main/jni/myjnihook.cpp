@@ -42,6 +42,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
     __android_log_print(ANDROID_LOG_INFO, __FUNCTION__, "starting native hook...");
     // AKSuspendAllThreads();
     AKHook(access);
+    access("libAndHook.so", F_OK);
     // AKResumeAllThreads();
     __android_log_print(ANDROID_LOG_INFO, __FUNCTION__, "native hook done.");
 

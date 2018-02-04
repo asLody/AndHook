@@ -3,7 +3,7 @@ package andhook.test;
 import java.lang.reflect.Method;
 
 import andhook.lib.AndHook;
-import andhook.lib.AndHook.HookHelper;
+import andhook.lib.HookHelper;
 
 import android.util.Log;
 

@@ -2,14 +2,11 @@ package andhook.test;
 
 import java.lang.reflect.Method;
 
-import andhook.lib.AndHook.HookHelper;
+import andhook.lib.HookHelper;
 import andhook.lib.xposed.XC_MethodReplacement;
-import andhook.lib.xposed.XposedBridge;
 import andhook.lib.xposed.XposedHelpers;
 import andhook.lib.xposed.XC_MethodHook;
-import andhook.lib.xposed.XC_MethodHook.MethodHookParam;
 
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.os.Build;
 import android.system.OsConstants;
@@ -107,57 +104,59 @@ public final class Xposed {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.O)
-    private static void hook_IoBridge_O() {
-        final Class<?> IoBridge = HookHelper.findClass("libcore/io/IoBridge");
-        final Method socket = HookHelper.findMethodHierarchically(IoBridge,
-                "socket", int.class, int.class, int.class);
+    private static final class O {
+        @TargetApi(Build.VERSION_CODES.O)
+        private static void hook_IoBridge() {
+            final Class<?> IoBridge = HookHelper.findClass("libcore/io/IoBridge");
+            final Method socket = HookHelper.findMethodHierarchically(IoBridge,
+                    "socket", int.class, int.class, int.class);
 
-        try {
-            Log.i(AndTest.LOG_TAG, "\npre call socket...");
-            if (socket.invoke(null, OsConstants.AF_INET, OsConstants.SOCK_STREAM, OsConstants.IPPROTO_TCP) == null) {
-                Log.w(AndTest.LOG_TAG, "********socket returns null unexpectedly");
+            try {
+                Log.i(AndTest.LOG_TAG, "\npre call socket...");
+                if (socket.invoke(null, OsConstants.AF_INET, OsConstants.SOCK_STREAM, OsConstants.IPPROTO_TCP) == null) {
+                    Log.w(AndTest.LOG_TAG, "********socket returns null unexpectedly");
+                }
+            } catch (final Exception e) {
+                Log.e(AndTest.LOG_TAG, "socket test error", e);
             }
-        } catch (final Exception e) {
-            Log.e(AndTest.LOG_TAG, "socket test error", e);
-        }
 
-        final XC_MethodHook.Unhook uk = XposedHelpers.findAndHookMethod(IoBridge, "socket", int.class, int.class, int.class,
-                new XC_MethodReplacement() {
-                    @Override
-                    protected Object replaceHookedMethod(MethodHookParam param)
-                            throws Throwable {
-                        Log.i(AndTest.LOG_TAG,
-                                "!!!!!!!!socket hit, returning null...");
-                        return null;
-                    }
-                });
+            final XC_MethodHook.Unhook uk = XposedHelpers.findAndHookMethod(IoBridge, "socket", int.class, int.class, int.class,
+                    new XC_MethodReplacement() {
+                        @Override
+                        protected Object replaceHookedMethod(MethodHookParam param)
+                                throws Throwable {
+                            Log.i(AndTest.LOG_TAG,
+                                    "!!!!!!!!socket hit, returning null...");
+                            return null;
+                        }
+                    });
 
-        try {
-            Log.i(AndTest.LOG_TAG, "post call socket...");
-            if (socket.invoke(null, OsConstants.AF_INET, OsConstants.SOCK_STREAM, OsConstants.IPPROTO_TCP) != null) {
-                Log.w(AndTest.LOG_TAG,
-                        "********socket returns non-null unexpectedly");
-            } else {
-                Log.i(AndTest.LOG_TAG, "test call socket passed 0.");
+            try {
+                Log.i(AndTest.LOG_TAG, "post call socket...");
+                if (socket.invoke(null, OsConstants.AF_INET, OsConstants.SOCK_STREAM, OsConstants.IPPROTO_TCP) != null) {
+                    Log.w(AndTest.LOG_TAG,
+                            "********socket returns non-null unexpectedly");
+                } else {
+                    Log.i(AndTest.LOG_TAG, "test call socket passed 0.");
+                }
+            } catch (final Exception e) {
+                Log.e(AndTest.LOG_TAG, "socket test error", e);
             }
-        } catch (final Exception e) {
-            Log.e(AndTest.LOG_TAG, "socket test error", e);
-        }
 
-        // cancels hook
-        uk.unhook();
+            // cancels hook
+            uk.unhook();
 
-        try {
-            Log.i(AndTest.LOG_TAG, "final call socket...");
-            if (socket.invoke(null, OsConstants.AF_INET, OsConstants.SOCK_STREAM, OsConstants.IPPROTO_TCP) == null) {
-                Log.w(AndTest.LOG_TAG,
-                        "********socket returns null unexpectedly");
-            } else {
-                Log.i(AndTest.LOG_TAG, "test call socket passed 1.");
+            try {
+                Log.i(AndTest.LOG_TAG, "final call socket...");
+                if (socket.invoke(null, OsConstants.AF_INET, OsConstants.SOCK_STREAM, OsConstants.IPPROTO_TCP) == null) {
+                    Log.w(AndTest.LOG_TAG,
+                            "********socket returns null unexpectedly");
+                } else {
+                    Log.i(AndTest.LOG_TAG, "test call socket passed 1.");
+                }
+            } catch (final Exception e) {
+                Log.e(AndTest.LOG_TAG, "socket test error", e);
             }
-        } catch (final Exception e) {
-            Log.e(AndTest.LOG_TAG, "socket test error", e);
         }
     }
 
@@ -169,7 +168,7 @@ public final class Xposed {
             if (android.os.Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 hook_IoBridge();
             } else {
-                hook_IoBridge_O();
+                O.hook_IoBridge(); // for Android O and later
             }
         } catch (final Exception e) {
             Log.e(AndTest.LOG_TAG, "xposed test error", e);

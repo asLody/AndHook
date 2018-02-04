@@ -1,6 +1,6 @@
 package andhook.test;
 
-import andhook.lib.AndHook.HookHelper;
+import andhook.lib.HookHelper;
 
 import android.util.Log;
 

@@ -1,5 +1,6 @@
 package andhook.ui;
 
+import andhook.test.A;
 import andhook.test.AndTest;
 import andhook.test.Constructor;
 import andhook.test.Xposed;
@@ -9,9 +10,8 @@ import android.os.Bundle;
 import android.provider.Settings.Secure;
 import android.util.Log;
 
-import andhook.ui.R;
-
 public class MainActivity extends Activity {
+    @SuppressWarnings("all")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.i("AndHook_" + this.getClass().getName(), "MainActivity::onCreate start");
@@ -24,7 +24,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(android.view.View v) {
                 // in case of GC, JIT-Compile
-                android.util.Log.i("AndHook_" + MainActivity.class.getName(), "begin...");
+                Log.i("AndHook_" + MainActivity.class.getName(), "begin...");
                 for (int i = 0; i < 3; ++i) {
                     andhook.test.Static.a1(i + "");
                     Secure.getString(MainActivity.this.getContentResolver(),
@@ -34,8 +34,14 @@ public class MainActivity extends Activity {
                         Log.w(AndTest.LOG_TAG,
                                 "********print returns wrong value unexpectedly");
                     }
+                    try {
+                        Log.i(AndTest.LOG_TAG, "modifiers of A:AA is 0x" +
+                                Integer.toHexString(A.class.getDeclaredMethod("AA", String.class).getModifiers()));
+                    } catch (final Exception e) {
+                        Log.e(AndTest.LOG_TAG, e.getMessage(), e);
+                    }
                 }
-                android.util.Log.i("AndHook_" + MainActivity.class.getName(), "end.");
+                Log.i("AndHook_" + MainActivity.class.getName(), "end.");
             }
         });
     }

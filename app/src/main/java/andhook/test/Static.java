@@ -3,7 +3,7 @@ package andhook.test;
 import java.lang.reflect.Method;
 
 import andhook.lib.AndHook;
-import andhook.lib.AndHook.HookHelper;
+import andhook.lib.HookHelper;
 
 import android.util.Log;
 
@@ -53,9 +53,12 @@ public final class Static {
 
             final Method m1 = A.class.getDeclaredMethod("AA", String.class);
             final Method m2 = B.class.getDeclaredMethod("BB", Class.class, String.class);
+            Log.i(AndTest.LOG_TAG, "modifiers of A:AA is 0x" + Integer.toHexString(m1.getModifiers()));
             Log.i(AndTest.LOG_TAG, "begin hook public static method A::AA...");
             HookHelper.hook(m1, m2);
             Log.i(AndTest.LOG_TAG, "end hook public static method A::AA");
+            Log.i(AndTest.LOG_TAG, "modifiers of A:AA is 0x" +
+                    Integer.toHexString(A.class.getDeclaredMethod("AA", String.class).getModifiers()));
 
             Log.i(AndTest.LOG_TAG, "calling public static method A::AA...");
             Log.i(AndTest.LOG_TAG,
