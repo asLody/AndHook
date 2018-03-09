@@ -1,12 +1,14 @@
 package andhook.lib;
 
 import java.lang.reflect.Member;
+import java.lang.reflect.Modifier;
 
 import android.os.Build;
+import android.util.Log;
 
 /**
  * @author rrrfff
- * @version 3.2.0
+ * @version 3.2.1
  */
 @SuppressWarnings({"unused", "WeakerAccess", "JniMissingFunction"})
 public final class AndHook {
@@ -76,7 +78,17 @@ public final class AndHook {
 
     public static native void resumeAll();
 
-    public static native boolean ensureClassInitialized(final Class<?> origin);
+    private static native boolean initializeClass(final Class<?> clazz);
+
+    @SuppressWarnings("all")
+    public static boolean ensureClassInitialized(final Class<?> clazz) {
+        if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
+            Log.w(LOG_TAG, "interface or abstract class `" + clazz.getName() +
+                    "` cannot be initialized!");
+            return false;
+        }
+        return initializeClass(clazz);
+    }
 
     public static native void enableFastDexLoad(final boolean enable);
 
