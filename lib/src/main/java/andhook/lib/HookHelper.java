@@ -7,50 +7,17 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentHashMap;
 
+import android.os.Build;
 import android.util.Log;
 import android.util.Pair;
 
 /**
- * @author rrrfff
- * @version 3.2.0
+ * Optional helper class
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class HookHelper {
     public static final String constructorName = "<init>";
     private static final ConcurrentHashMap<Pair<String, String>, Integer> sBackups = new ConcurrentHashMap<>();
-    private static Method getSignature = null;
-
-    static {
-        try {
-            final Class<?> clazz = ClassLoader.getSystemClassLoader()
-                    .loadClass("libcore.reflect.Types");
-            getSignature = clazz.getDeclaredMethod("getSignature",
-                    Class.class);
-            getSignature.setAccessible(true);
-        } catch (final Exception e) {
-            Log.e(AndHook.LOG_TAG, e.getMessage(), e);
-        }
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    public static String getSignature(final Class<?> retType,
-                                      final Class<?>[] parameterTypes) {
-        try {
-            final StringBuilder result = new StringBuilder();
-
-            result.append('(');
-            for (final Class<?> parameterType : parameterTypes) {
-                result.append(getSignature.invoke(null, parameterType));
-            }
-            result.append(")");
-            result.append(getSignature.invoke(null, retType));
-
-            return result.toString();
-        } catch (final Exception e) {
-            Log.e(AndHook.LOG_TAG, "failed to get signature!", e);
-        }
-        return null;
-    }
 
     private static void warnKnownIssue(final Class<?> clazz,
                                        final Method replace) {
@@ -67,6 +34,9 @@ public final class HookHelper {
     }
 
     public static void hook(final Member origin, final Method replace) {
+        if (uniqueKey(replace) == null)
+            return;
+
         warnKnownIssue(origin.getDeclaringClass(), replace);
         final int slot = AndHook.backup(origin);
         if (slot != -1 && saveBackupSlot(slot, replace)) {
@@ -76,6 +46,9 @@ public final class HookHelper {
 
     public static void hook(final Class<?> clazz, final String name,
                             final String signature, final Method replace) {
+        if (uniqueKey(replace) == null)
+            return;
+
         warnKnownIssue(clazz, replace);
         final int slot = AndHook.backup(clazz, name, signature);
         if (slot != -1 && saveBackupSlot(slot, replace)) {
@@ -83,30 +56,36 @@ public final class HookHelper {
         }
     }
 
-    private static boolean saveBackupSlot(final Integer slot,
-                                          final Method md) {
+    private static Pair<String, String> uniqueKey(final Method md) {
         // a simple workaround for overloaded methods
         final Pair<String, String> key = Pair.create(md.getDeclaringClass()
-                .getName(), md.getName()
-                + (md.getParameterTypes().length - 1));
+                .getName(), md.getName() + (md.getParameterTypes().length - 1));
         if (sBackups.containsKey(key)) {
-            Log.e(AndHook.LOG_TAG, "duplicate key error!");
-            return false;
+            Log.e(AndHook.LOG_TAG, "duplicate key error! already hooked?");
+            return null;
         }
+        return key;
+    }
+
+    private static boolean saveBackupSlot(final Integer slot, final Method md) {
+        final Pair<String, String> key = uniqueKey(md);
+        if (key == null)
+            return false;
+
         sBackups.put(key, slot);
-        Log.i(AndHook.LOG_TAG, "saved backup for " + key.first + "@" + key.second
-                + ", slot = " + slot);
+        Log.i(AndHook.LOG_TAG, "saved backup for " + key.first + "@"
+                + key.second + ", slot = " + slot);
         return true;
     }
 
     private static int getBackupSlot(final int identifier) {
-        final StackTraceElement stack = Thread.currentThread()
-                .getStackTrace()[4];
+        final StackTraceElement stack = Thread.currentThread().getStackTrace()[4];
         final Integer slot = sBackups.get(Pair.create(stack.getClassName(),
                 stack.getMethodName() + identifier));
         if (slot == null) {
-            Log.e(AndHook.LOG_TAG, "no backup found for " + stack.getClassName()
-                    + "@" + stack.getMethodName() + "@" + identifier);
+            Log.e(AndHook.LOG_TAG,
+                    "no backup found for " + stack.getClassName() + "@"
+                            + stack.getMethodName() + "@" + identifier);
             return -1;
         }
         return slot;
@@ -114,8 +93,7 @@ public final class HookHelper {
 
     public static void invokeVoidOrigin(final Object receiver,
                                         final Object... params) {
-        AndHook.invokeVoidMethod(getBackupSlot(params.length), receiver,
-                params);
+        AndHook.invokeVoidMethod(getBackupSlot(params.length), receiver, params);
     }
 
     public static boolean invokeBooleanOrigin(final Object receiver,
@@ -126,8 +104,8 @@ public final class HookHelper {
 
     public static byte invokeByteOrigin(final Object receiver,
                                         final Object... params) {
-        return AndHook.invokeByteMethod(getBackupSlot(params.length),
-                receiver, params);
+        return AndHook.invokeByteMethod(getBackupSlot(params.length), receiver,
+                params);
     }
 
     public static short invokeShortOrigin(final Object receiver,
@@ -138,20 +116,20 @@ public final class HookHelper {
 
     public static char invokeCharOrigin(final Object receiver,
                                         final Object... params) {
-        return AndHook.invokeCharMethod(getBackupSlot(params.length),
-                receiver, params);
+        return AndHook.invokeCharMethod(getBackupSlot(params.length), receiver,
+                params);
     }
 
     public static int invokeIntOrigin(final Object receiver,
                                       final Object... params) {
-        return AndHook.invokeIntMethod(getBackupSlot(params.length),
-                receiver, params);
+        return AndHook.invokeIntMethod(getBackupSlot(params.length), receiver,
+                params);
     }
 
     public static long invokeLongOrigin(final Object receiver,
                                         final Object... params) {
-        return AndHook.invokeLongMethod(getBackupSlot(params.length),
-                receiver, params);
+        return AndHook.invokeLongMethod(getBackupSlot(params.length), receiver,
+                params);
     }
 
     public static float invokeFloatOrigin(final Object receiver,
@@ -180,8 +158,8 @@ public final class HookHelper {
             try {
                 f.set(obj, value);
             } catch (final Exception e) {
-                Log.e(AndHook.LOG_TAG, "failed to set instance field "
-                        + name, e);
+                Log.e(AndHook.LOG_TAG, "failed to set instance field " + name,
+                        e);
             }
         }
     }
@@ -236,13 +214,13 @@ public final class HookHelper {
         return f;
     }
 
-    public static Constructor<?> findConstructorHierarchically(final Class<?> clazz,
-                                                               final Class<?>... parameterTypes) {
+    public static Constructor<?> findConstructorHierarchically(
+            final Class<?> clazz, final Class<?>... parameterTypes) {
         Constructor<?> m = null;
         Class<?> c = clazz;
         do {
             try {
-                m = c.getConstructor(parameterTypes);
+                m = c.getDeclaredConstructor(parameterTypes);
             } catch (final NoSuchMethodException e) {
                 c = c.getSuperclass();
                 if (c == null)
@@ -252,7 +230,8 @@ public final class HookHelper {
         if (m != null) {
             m.setAccessible(true);
         } else {
-            Log.e(AndHook.LOG_TAG, "failed to find constructor of class " + clazz.getName());
+            Log.e(AndHook.LOG_TAG, "failed to find constructor of class "
+                    + clazz.getName());
         }
         return m;
     }
@@ -328,7 +307,8 @@ public final class HookHelper {
 
                     Member origin;
                     if (isConstructor(clazz, name)) {
-                        origin = findConstructorHierarchically(clazz, parameterTypes);
+                        origin = findConstructorHierarchically(clazz,
+                                parameterTypes);
                     } else {
                         origin = findMethodHierarchically(clazz, name,
                                 parameterTypes);

@@ -8,30 +8,31 @@ import android.util.Log;
 
 /**
  * @author rrrfff
- * @version 3.2.1
+ * @version 3.5.0
  */
 @SuppressWarnings({"unused", "WeakerAccess", "JniMissingFunction"})
 public final class AndHook {
+    public final static String VERSION = "3.5.0";
     public final static String LOG_TAG = "AndHook";
 
     static {
         try {
             System.loadLibrary("AndHook");
-        } catch (final UnsatisfiedLinkError e0) {
+        } catch (final UnsatisfiedLinkError e) {
             try {
                 // compatible with libhoudini
                 System.loadLibrary("AndHookCompat");
-            } catch (final UnsatisfiedLinkError e1) {
-                // still failed, YunOS?
-                throw new UnsatisfiedLinkError("incompatible platform, "
-                        + e0.getMessage());
+            } catch (final UnsatisfiedLinkError ignored) {
+                throw new RuntimeException("incompatible platform", e);
             }
         }
     }
 
     public static void ensureNativeLibraryLoaded() {
-        final AndHook dummy = new AndHook();
+        new AndHook();
     }
+
+    public static native String getVersionInfo();
 
     public static native int backup(final Member origin);
 
@@ -78,6 +79,10 @@ public final class AndHook {
 
     public static native void resumeAll();
 
+    public static native void startDaemons();
+
+    public static native void stopDaemons();
+
     private static native boolean initializeClass(final Class<?> clazz);
 
     @SuppressWarnings("all")
@@ -109,8 +114,8 @@ public final class AndHook {
         dumpClassMethods(null, clsname);
     }
 
-    static native Object invoke(final int slot, final Object receiver,
-                                final Object... params);
+    public static native Object invoke(final int slot, final Object receiver,
+                                       final Object... params);
 
     public static void invokeVoidMethod(final int slot, final Object receiver,
                                         final Object... params) {

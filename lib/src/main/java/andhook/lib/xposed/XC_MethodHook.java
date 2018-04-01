@@ -176,14 +176,14 @@ public class XC_MethodHook extends XCallback {
         }
 
         public void unhook() {
-            XposedBridge.unhookMethod(hookMethod, XC_MethodHook.this);
+            XposedBridge.unhookMethod(this.hookMethod, XC_MethodHook.this);
         }
 
         /**
          * AndHook extension function.
          */
-        public boolean unhookAll() {
-            return XposedBridge.unhookMethod(this.slot, this.hookMethod);
+        public boolean restore() {
+            return XposedBridge.unhookMethod(this.hookMethod, this.slot);
         }
     }
 }

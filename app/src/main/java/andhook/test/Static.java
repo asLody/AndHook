@@ -4,73 +4,93 @@ import java.lang.reflect.Method;
 
 import andhook.lib.AndHook;
 import andhook.lib.HookHelper;
+import andhook.ui.MainActivity;
 
-import android.util.Log;
-
-@SuppressWarnings("all")
 public final class Static {
-    public static String a1(final String s) {
-        Log.i(AndTest.LOG_TAG, "public static method Static::a1 hit!");
-        return "return from Static::a1 with param " + s;
+    public static String a(final String s) {
+        MainActivity.output("public static Static::a hit with " + s);
+        return s + "_a";
     }
 
-    private static String a2(final Class<?> classStatic, final String s) {
-        Log.i(AndTest.LOG_TAG, "public static method Static::a2 hit, class = " + classStatic);
-        try {
-            final Object obj = HookHelper.invokeObjectOrigin(null, s + "+a2");
-            Log.i(AndTest.LOG_TAG, "invokeObjectOrigin[static] return " + obj);
-        } catch (final Exception e) {
-            e.printStackTrace();
+    @SuppressWarnings("unused")
+    private static String b(final Class<?> classStatic, final String s) {
+        MainActivity.output("private static Static::b hit with " + s
+                + ", class = " + classStatic);
+        return HookHelper.invokeObjectOrigin(null, s) + "_b";
+    }
+
+    private static void hookWithinSameClass() throws Exception {
+        final Method ma = Static.class.getDeclaredMethod("a", String.class);
+        final Method mb = Static.class.getDeclaredMethod("b", Class.class,
+                String.class);
+
+        MainActivity.output("hooking public static Static::a...");
+        HookHelper.hook(ma, mb);
+
+        MainActivity.output("calling public static Static::a...");
+        final String result = a("test");
+        MainActivity.output("result = " + result);
+
+        if (!result.endsWith("_a_b"))
+            throw new RuntimeException("unexpected result " + result);
+
+        NativeAssert.run(ma);
+    }
+
+    private static final class A {
+        public static String a(final String s) {
+            MainActivity.output("public static A::a hit with " + s);
+            return s + "_a";
         }
-        return "return from Static::a2 with param " + s;
     }
 
-    private static void hookUsingApi() {
-        try {
-            final Method m1 = Static.class.getDeclaredMethod("a1",
-                    String.class);
-            final Method m2 = Static.class.getDeclaredMethod("a2", Class.class,
-                    String.class);
-            Log.i(AndTest.LOG_TAG, "begin hook public static method Static::a1...");
-            HookHelper.hook(m1, m2);
-            Log.i(AndTest.LOG_TAG, "end hook public static method Static::a1");
-
-            Log.i(AndTest.LOG_TAG, "calling public static method Static::a1...");
-            Log.i(AndTest.LOG_TAG, "public static method Static::a1 returns [" + a1("test")
-                    + "]");
-        } catch (final Exception e) {
-            e.printStackTrace();
+    private static final class B {
+        @SuppressWarnings("unused")
+        private static String b(final Class<?> classA, final String s) {
+            MainActivity.output("private static B::b hit with " + s
+                    + ", class = " + classA);
+            return HookHelper.invokeObjectOrigin(null, s) + "_b";
         }
     }
 
-    private static void hookMethodFromDifferentClassUsingApi() {
-        try {
-            // The following code should be called once and only once
-            // as A.class and B.class may not have been initialized
-            // if you use AndHook api directly.
+    private static void hookFromDifferentClass() throws Exception {
+        if (NativeAssert.isBlackList()) {
             AndHook.ensureClassInitialized(A.class);
             AndHook.ensureClassInitialized(B.class);
-
-            final Method m1 = A.class.getDeclaredMethod("AA", String.class);
-            final Method m2 = B.class.getDeclaredMethod("BB", Class.class, String.class);
-            Log.i(AndTest.LOG_TAG, "modifiers of A:AA is 0x" + Integer.toHexString(m1.getModifiers()));
-            Log.i(AndTest.LOG_TAG, "begin hook public static method A::AA...");
-            HookHelper.hook(m1, m2);
-            Log.i(AndTest.LOG_TAG, "end hook public static method A::AA");
-            Log.i(AndTest.LOG_TAG, "modifiers of A:AA is 0x" +
-                    Integer.toHexString(A.class.getDeclaredMethod("AA", String.class).getModifiers()));
-
-            Log.i(AndTest.LOG_TAG, "calling public static method A::AA...");
-            Log.i(AndTest.LOG_TAG,
-                    "public static method A::AA returns [" + A.AA("test") + "]");
-        } catch (final Exception e) {
-            e.printStackTrace();
         }
+
+        final Method ma = A.class.getDeclaredMethod("a", String.class);
+        final Method mb = B.class.getDeclaredMethod("b", Class.class,
+                String.class);
+
+        MainActivity.output("hooking public static A::a...");
+        HookHelper.hook(ma, mb);
+
+        MainActivity.output("calling public static A::a...");
+        final String result = A.a("test");
+        MainActivity.output("result = " + result);
+
+        if (!result.endsWith("_a_b"))
+            throw new RuntimeException("unexpected result " + result);
+
+        NativeAssert.run(ma);
     }
 
-    public static void doHook() {
-        // hook using base AndHook api
-        hookUsingApi();
-        hookMethodFromDifferentClassUsingApi();
+    public static void test() {
+        MainActivity.clear();
+        MainActivity.output("static method hook test...");
+
+        try {
+            hookWithinSameClass();
+
+            MainActivity.output("    ");
+
+            hookFromDifferentClass();
+        } catch (final Exception e) {
+            MainActivity.alert(e);
+            return;
+        }
+
+        MainActivity.info("static method hook test passed");
     }
 }

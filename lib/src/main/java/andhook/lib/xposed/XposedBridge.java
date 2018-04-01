@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * This class contains most of Xposed's central logic, such as initialization and callbacks used by
  * the native side. It also includes methods to add new hooks.
  * <p>
- * Latest Update 2018/01/20
+ * Latest Update 2018/04/01
  */
 @SuppressWarnings("WeakerAccess")
 public final class XposedBridge {
@@ -80,6 +80,7 @@ public final class XposedBridge {
         if (additionalInfo == null) {
             if (Modifier.isStatic(hookMethod.getModifiers()))
                 AndHook.ensureClassInitialized(hookMethod.getDeclaringClass());
+
             additionalInfo = new AdditionalHookInfo(hookMethod, AndHook.backup(hookMethod));
             if (additionalInfo.slot == -1)
                 throw new RuntimeException("Failed to backup methods: " + hookMethod.toString());
@@ -122,9 +123,10 @@ public final class XposedBridge {
      * <p>
      * AndHook extension function.
      */
-    public static boolean unhookMethod(final int slot, final Member hookMethod) {
-        sHookedMethodInfos.remove(hookMethod);
-        return AndHook.restore(slot, hookMethod);
+    public static boolean unhookMethod(final Member hookMethod, final int slot) {
+        final boolean r = AndHook.restore(slot, hookMethod);
+        if (r) sHookedMethodInfos.remove(hookMethod);
+        return r;
     }
 
     /**
@@ -261,6 +263,16 @@ public final class XposedBridge {
     }
 
     /**
+     * Retrieves the backup slot of the specified method, or -1 if the method has not yet been hooked.
+     * <p>
+     * AndHook extension function.
+     */
+    public static int getBackupSlot(final Member method) {
+        final AdditionalHookInfo additionalInfo = sHookedMethodInfos.get(method);
+        return additionalInfo != null ? additionalInfo.slot : -1;
+    }
+
+    /**
      * Basically the same as {@link Method#invoke}, but calls the original method
      * as it was before the interception by Xposed. Also, access permissions are not checked.
      * <p>
@@ -270,9 +282,19 @@ public final class XposedBridge {
      * the method and call {@code param.setResult(null)} in {@link XC_MethodHook#beforeHookedMethod}
      * if the original method should be skipped.
      */
+    @SuppressWarnings("unused")
+    public static Object invokeOriginalMethod(final Member method, final Object thisObject,
+                                              final Object[] args) {
+        final int slot = getBackupSlot(method);
+        if (slot != -1) {
+            return invokeOriginalMethod(slot, thisObject, args);
+        }
+        return null;
+    }
+
     public static Object invokeOriginalMethod(final int slot, final Object thisObject,
                                               final Object[] args) {
-        return AndHook.invokeMethod(slot, thisObject, args);
+        return AndHook.invoke(slot, thisObject, args);
     }
 
     public static final class CopyOnWriteSortedSet<E> {

@@ -1,7 +1,7 @@
 /*
  *
  *  @author : rrrfff@foxmail.com
- *  @date   : 2017/12/25
+ *  @date   : 2018/04/01
  *  https://github.com/rrrfff/AndHook
  *
  */
@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <unistd.h>
 
-#define AK_ANDROID_RUNTIME  ((const char *)-1)
+#define AK_ANDROID_RUNTIME  NULL
 #define AK_RWX              (PROT_READ | PROT_WRITE | PROT_EXEC)
 
 #ifdef __cplusplus
@@ -42,18 +42,36 @@ extern "C" {
     void AKHookFunction(const void *symbol, const void *replace, void **result/* = NULL*/);
     /// <summary>
     /// Intercepts native method and writes trampoline to rwx.
-    /// @warning rwx should be aligned properly and large enough to hold the trampoline
+    /// @warning `rwx` should be aligned properly and large enough to hold the trampoline
     /// </summary>
     void *AKHookFunctionV(const void *symbol, const void *replace, void *rwx, const uintptr_t size/* = 64*/);
     /// <summary>
+    /// Intercepts native method if possible and writes trampoline to rwx.
+    /// @warning `rwx` should be aligned properly and large enough to hold the trampoline
+    /// </summary>
+    void *AKHookFunctionEx(const void *symbol, const uintptr_t overwritable, const void *replace,
+                           void *rwx, const uintptr_t size/* = 64*/);
+    /// <summary>
+    /// Just like `AKHookFunction`, but will create a wrapper of `replace` (which may not follow The Procedure Call Standard)
+    /// to preserve the contents of the registers
+    /// </summary>
+    void AKHookInternalFunction(const void *symbol, const void *replace, void **result/* = NULL*/);
+    /// <summary>
     /// Sets protection on the specified region of memory.
-    /// @addr is NOT necessary to be aligned to a page boundary
+    /// `addr` is NOT necessary to be aligned to a page boundary
     /// </summary>
     AK_BOOL AKProtectMemory(const void *addr, uintptr_t len, int prot/* = AK_RWX*/);
     /// <summary>
-    /// Patches the specified region of memory
+    /// Sets protection and patches the specified region of memory
     /// </summary>
     AK_BOOL AKPatchMemory(const void *addr, const void *data, uintptr_t len);
+
+    /// <summary>
+    /// Performs the basic initialization for java-related api.
+    /// The function ensures that this initialization occurs only once, 
+    /// even when multiple threads may attempt the initialization
+    /// </summary>
+    jint AKInitializeOnce(JNIEnv *env/* = NULL*/, JavaVM *jvm/* = NULL*/);
     /// <summary>
     /// Intercepts java method using native code
     /// </summary>
@@ -64,7 +82,7 @@ extern "C" {
     /// </summary>
     void AKJavaHookMethodV(jmethodID methodId, const void *replace, jmethodID *result/* = NULL*/);
     /// <summary>
-    /// Marks the specified java method as native (if not) and backups original method if result != NULL
+    /// Marks the specified java method as native (if not) and backups original method if `result` != NULL
     /// </summary>
     AK_BOOL AKForceNativeMethod(jmethodID methodId, const void *jni_entrypoint, AK_BOOL fast_native/* = false*/,
                                 jmethodID *result/* = NULL*/);
@@ -77,7 +95,7 @@ extern "C" {
     /// Registers the native method and returns the new entry point. NB The returned entry point might
     /// be different from the native_method argument if some MethodCallback modifies it.
     /// @warning This function provided is intended only for Android O or later,
-    /// as there are possible runtime callbacks that we should notify.
+    /// as there are possible runtime callbacks that we should notify
     /// </summary>
     const void *AKRegisterNative(jmethodID methodId, const void *native_method, bool fast_native/* = false*/);
     /// <summary>
@@ -101,6 +119,14 @@ extern "C" {
     /// Dumps all the virtual and direct methods of the specified class
     /// </summary>
     void AKDumpClassMethods(JNIEnv *env, jclass clazz/* = NULL*/, const char *clsname/* = NULL*/);
+    /// <summary>
+    /// Restarts daemons stopped by AKStopJavaDaemons
+    /// </summary>
+    AK_BOOL AKStartJavaDaemons(JNIEnv *env);
+    /// <summary>
+    /// Stops daemons so that the zygote can be a single-threaded process
+    /// </summary>
+    AK_BOOL AKStopJavaDaemons(JNIEnv *env);
     /// <summary>
     /// Ensures all threads running Java suspend and that those not running Java don't start
     /// </summary>
@@ -137,6 +163,10 @@ extern "C" {
     /// Enables or disables dex fast-loading mechanism [ART only]
     /// </summary>
     void AKEnableFastDexLoad(AK_BOOL enable);
+    /// <summary>
+    /// Retrieves the last build date
+    /// </summary>
+    const char *AKLastBuildDate();
 
 #ifdef __cplusplus
 }

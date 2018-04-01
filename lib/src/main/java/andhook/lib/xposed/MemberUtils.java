@@ -21,7 +21,7 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 
 /**
- * Contains common code for working with Methods/Constructors, extracted and
+ * Contains common code for working with Methods/Constructor, extracted and
  * refactored from <code>MethodUtils</code> when it was imported from Commons
  * BeanUtils.
  *

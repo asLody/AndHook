@@ -2,29 +2,36 @@ package andhook.test;
 
 import andhook.lib.HookHelper;
 import andhook.lib.HookHelper.Hook;
+import andhook.ui.MainActivity;
 
-import android.util.Log;
-
-@SuppressWarnings("all")
 public final class Constructor {
-    public Constructor() {
-        Log.i(AndTest.LOG_TAG, "Original constructor hit, this is " + this);
+    private static boolean passed;
+
+    private Constructor() {
+        MainActivity.output("original constructor hit, this = " + this);
     }
 
+    @SuppressWarnings("unused")
     @Hook(clazz = Constructor.class, name = "<init>")
-    private static void FakeConstructor(final Object objConstructor) {
-        Log.i(AndTest.LOG_TAG, "Fake constructor hit, this is " + objConstructor);
+    private static void faked_Constructor(final Object objConstructor) {
+        MainActivity.output("faked constructor hit, this = " + objConstructor);
+        MainActivity.output(new RuntimeException("test"));
         HookHelper.invokeVoidOrigin(objConstructor);
+        passed = true;
     }
 
-    public static void doHook() {
-        // test call constructor
-        new Constructor();
+    public static void test() {
+        MainActivity.clear();
+        MainActivity.output("constructor hook test...");
 
-        // hook using HookHelper
         HookHelper.applyHooks(Constructor.class);
 
-        // test call constructor
+        passed = false;
         new Constructor();
+
+        if (passed)
+            MainActivity.info("constructor hook test passed");
+        else
+            MainActivity.alert("failed to hook constructor!");
     }
 }

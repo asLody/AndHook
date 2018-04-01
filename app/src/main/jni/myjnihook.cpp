@@ -1,9 +1,10 @@
 #include <jni.h>
 #include <android/log.h>
 #include "include/AndHook.h"
-#define AKLog(...) __android_log_print(ANDROID_LOG_INFO, __FUNCTION__, __VA_ARGS__)
+#define AKLog(...) __android_log_print(ANDROID_LOG_VERBOSE, __FUNCTION__, __VA_ARGS__)
 #define AKHook(X)  AKHookFunction(reinterpret_cast<void *>(X), reinterpret_cast<void *>(my_##X), reinterpret_cast<void **>(&sys_##X));
 
+static jboolean  java_passed = JNI_FALSE;
 static jmethodID sys_getGTalkDeviceId;
 static jstring JNICALL my_getGTalkDeviceId(JNIEnv *env, jclass obj, jlong j)
 {
@@ -13,21 +14,91 @@ static jstring JNICALL my_getGTalkDeviceId(JNIEnv *env, jclass obj, jlong j)
         AKLog("%s", env->GetStringUTFChars(js, NULL));
     } //if
 
+    java_passed = JNI_TRUE;
     return env->NewStringUTF("faked_GTalkDeviceId");
 }
 
+static jboolean JNICALL java_hook(JNIEnv *env, jclass)
+{
+    static bool hooked = false;
+
+    AKLog("starting jni hook...");
+    jclass clazz = env->FindClass("android/provider/Settings");
+    if (!hooked) AKJavaHookMethod(env, clazz,
+                                  "getGTalkDeviceId", "(J)Ljava/lang/String;",   // hooked method
+                                  reinterpret_cast<void *>(my_getGTalkDeviceId), // our method 
+                                  &sys_getGTalkDeviceId                          // backup method id
+    );
+    hooked = true;
+
+    AKLog("calling getGTalkDeviceId...");
+    env->CallStaticObjectMethod(clazz,
+                                env->GetStaticMethodID(clazz, "getGTalkDeviceId", "(J)Ljava/lang/String;"),
+                                static_cast<jlong>(__LINE__));
+
+    AKLog("jni hook done, java_passed = %u", java_passed);
+    return java_passed;
+}
+
+//-------------------------------------------------------------------------
+
+static jboolean native_passed = JNI_FALSE;
 static int(*sys_access)(const char *pathname, int mode);
 static int my_access(const char *pathname, int mode)
 {
-    AKLog("access %s, %d", pathname, mode);
+    AKLog("my_access %s, %d", pathname, mode);
+    native_passed = JNI_TRUE;
+
     if (strstr(pathname, "/system/bin/su") != NULL ||
         strstr(pathname, "/system/xbin/su") != NULL) {
         return -1;
     } //if
 
-    // call the original function
-    return sys_access(pathname, mode);
+    AKLog("calling original sys_access %p...", sys_access);
+    int r = sys_access(pathname, mode);
+
+    AKLog("sys_access %p called, return value = %d", sys_access, r);
+    return r;
 }
+
+static int(*sys_execv)(const char *name, char *const *argv);
+extern int my_execv(const char *name, char *const *argv)
+{
+    AKLog("my_execv %s, %s", name, argv ? argv[0] : "");
+    native_passed = JNI_TRUE;
+
+    AKLog("calling original sys_execv %p...", sys_execv);
+    int r = sys_execv(name, argv);
+
+    AKLog("sys_execv %p called, return value = %d", sys_execv, r);
+    return r;
+}
+
+static jboolean JNICALL native_hook(JNIEnv *env, jclass)
+{
+    static bool hooked = false;
+
+    AKLog("starting native hook...");
+    if (!hooked) AKHookFunction(reinterpret_cast<void *>(access),      // hooked function
+                                reinterpret_cast<void *>(my_access),   // our function
+                                reinterpret_cast<void **>(&sys_access) // backup function pointer
+    );
+    if (!hooked) AKHook(execv);
+    hooked = true;
+
+    AKLog("triggering `access` call...");
+    access("libAndHook.so", F_OK);
+
+    AKLog("triggering `execv` call...");
+    char  args[] = "-A";
+    char *argv[] = { args, NULL };
+    execv("ps", argv);
+
+    AKLog("native hook done, native_passed = %u", native_passed);
+    return native_passed;
+}
+
+//-------------------------------------------------------------------------
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
 {
@@ -36,24 +107,13 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
         return JNI_EVERSION;
     } //if
 
-    AKLog("starting jni hook...");
-    jclass clazz = env->FindClass("android/provider/Settings");
-    AKJavaHookMethod(env, clazz, 
-                     "getGTalkDeviceId", "(J)Ljava/lang/String;",   // hooked method
-                     reinterpret_cast<void *>(my_getGTalkDeviceId), // our method 
-                     &sys_getGTalkDeviceId                          // backup method id
-    );
-    AKLog("jni hook done.");
-
-    AKLog("starting native hook...");
-    AKHookFunction(reinterpret_cast<void *>(access),      // hooked function
-                   reinterpret_cast<void *>(my_access),   // our function
-                   reinterpret_cast<void **>(&sys_access) // backup function pointer
-    );
-    AKLog("native hook done.");
-
-    // tigger `access` call
-    access("libAndHook.so", F_OK);
+    jclass JNI = env->FindClass("andhook/test/JNI");
+    env->ExceptionClear();
+    JNINativeMethod gMethods[] = {
+        { "java_hook", "()Z", reinterpret_cast<void *>(&java_hook) },
+        { "native_hook", "()Z", reinterpret_cast<void *>(&native_hook) }
+    };
+    env->RegisterNatives(JNI, gMethods, 2);
 
     return JNI_VERSION_1_6;
 }

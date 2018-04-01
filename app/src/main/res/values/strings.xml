@@ -1,7 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">AndHook</string>
-    <string name="hello_world">Hello world!</string>
+    <string name="app_name">AndHook_Test</string>
+    <string name="more_details">Please see logcat for more details.</string>
+    <string name="JNI">JNI</string>
+    <string name="Xposed">Xposed</string>
+    <string name="Constructor">Constructor</string>
+    <string name="GC">GC</string>
+    <string name="Static">Static</string>
+    <string name="Virtual">Virtual</string>
+    <string name="WideningConversion">WideningConversion</string>
+    <string name="SystemClass">SystemClass</string>
+    <string name="Thread">Thread</string>
+    <string name="Exception">Exception</string>
 
 </resources>
