@@ -1,4 +1,4 @@
-package andhook.ui;
+package andhook.test.ui;
 
 import andhook.lib.AndHook;
 import andhook.lib.HookHelper;

@@ -1,6 +1,6 @@
 package andhook.test;
 
-import andhook.ui.MainActivity;
+import andhook.test.ui.MainActivity;
 
 public final class GC {
     public static void test() {

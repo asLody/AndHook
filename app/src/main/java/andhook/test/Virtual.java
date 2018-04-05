@@ -4,8 +4,7 @@ import java.lang.reflect.Method;
 
 import andhook.lib.AndHook;
 import andhook.lib.HookHelper;
-import andhook.ui.MainActivity;
-
+import andhook.test.ui.MainActivity;
 import android.util.Log;
 
 public final class Virtual {

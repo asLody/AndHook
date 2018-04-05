@@ -4,7 +4,7 @@ import java.lang.reflect.Method;
 
 import andhook.lib.AndHook;
 import andhook.lib.HookHelper;
-import andhook.ui.MainActivity;
+import andhook.test.ui.MainActivity;
 
 public final class Static {
     public static String a(final String s) {

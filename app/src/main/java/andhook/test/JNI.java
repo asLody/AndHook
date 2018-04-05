@@ -1,7 +1,7 @@
 package andhook.test;
 
 import andhook.lib.AndHook;
-import andhook.ui.MainActivity;
+import andhook.test.ui.MainActivity;
 
 public final class JNI {
     private static native boolean java_hook();

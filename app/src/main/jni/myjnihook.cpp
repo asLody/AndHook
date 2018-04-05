@@ -61,6 +61,19 @@ static int my_access(const char *pathname, int mode)
     return r;
 }
 
+static int(*sys_execve)(const char *, char * const *, char * const *);
+static int my_execve(const char *a, char * const *b, char * const *c)
+{
+    AKLog("my_execve %s, %s, %p", a, b ? b[0] : "", c);
+    native_passed = JNI_TRUE;
+
+    AKLog("calling original sys_execve %p...", sys_execve);
+    int r = sys_execve(a, b, c);
+
+    AKLog("sys_execve %p called, return value = %d", sys_execve, r);
+    return r;
+}
+
 static int(*sys_execv)(const char *name, char *const *argv);
 extern int my_execv(const char *name, char *const *argv)
 {
@@ -84,15 +97,19 @@ static jboolean JNICALL native_hook(JNIEnv *env, jclass)
                                 reinterpret_cast<void **>(&sys_access) // backup function pointer
     );
     if (!hooked) AKHook(execv);
+    if (!hooked) AKHook(execve);
     hooked = true;
 
-    AKLog("triggering `access` call...");
+    AKLog("triggering `access` call %p, %p...", &access, sys_execv);
     access("libAndHook.so", F_OK);
 
-    AKLog("triggering `execv` call...");
+    AKLog("triggering `execv` call %p, %p...", &execv, sys_execv);
     char  args[] = "-A";
     char *argv[] = { args, NULL };
     execv("ps", argv);
+
+    AKLog("triggering `execve` call %p, %p...", &execve, sys_execve);
+    execve("ps", argv, argv);
 
     AKLog("native hook done, native_passed = %u", native_passed);
     return native_passed;

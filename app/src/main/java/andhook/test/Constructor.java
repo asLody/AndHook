@@ -2,7 +2,7 @@ package andhook.test;
 
 import andhook.lib.HookHelper;
 import andhook.lib.HookHelper.Hook;
-import andhook.ui.MainActivity;
+import andhook.test.ui.MainActivity;
 
 public final class Constructor {
     private static boolean passed;

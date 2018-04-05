@@ -4,8 +4,7 @@ import java.io.File;
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 
-import andhook.ui.MainActivity;
-
+import andhook.test.ui.MainActivity;
 import android.os.Build;
 
 final class NativeAssert {

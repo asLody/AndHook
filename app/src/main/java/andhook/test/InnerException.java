@@ -2,7 +2,7 @@ package andhook.test;
 
 import andhook.lib.xposed.XC_MethodHook;
 import andhook.lib.xposed.XposedHelpers;
-import andhook.ui.MainActivity;
+import andhook.test.ui.MainActivity;
 
 public final class InnerException {
     private static final class k {

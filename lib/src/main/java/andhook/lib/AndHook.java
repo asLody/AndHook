@@ -8,11 +8,11 @@ import android.util.Log;
 
 /**
  * @author rrrfff
- * @version 3.5.0
+ * @version 3.5.1
  */
 @SuppressWarnings({"unused", "WeakerAccess", "JniMissingFunction"})
 public final class AndHook {
-    public final static String VERSION = "3.5.0";
+    public final static String VERSION = "3.5.1";
     public final static String LOG_TAG = "AndHook";
 
     static {

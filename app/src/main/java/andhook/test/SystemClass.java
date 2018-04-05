@@ -2,8 +2,7 @@ package andhook.test;
 
 import andhook.lib.HookHelper;
 import andhook.lib.HookHelper.Hook;
-import andhook.ui.MainActivity;
-
+import andhook.test.ui.MainActivity;
 import android.content.ContentResolver;
 import android.provider.Settings.Secure;
 

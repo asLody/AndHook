@@ -7,8 +7,7 @@ import andhook.lib.xposed.XC_MethodReplacement;
 import andhook.lib.xposed.XposedBridge;
 import andhook.lib.xposed.XposedHelpers;
 import andhook.lib.xposed.XC_MethodHook;
-import andhook.ui.MainActivity;
-
+import andhook.test.ui.MainActivity;
 import android.annotation.TargetApi;
 import android.os.Build;
 import android.system.OsConstants;
