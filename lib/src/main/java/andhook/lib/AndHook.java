@@ -1,5 +1,6 @@
 package andhook.lib;
 
+import java.io.File;
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 
@@ -7,15 +8,20 @@ import android.os.Build;
 import android.util.Log;
 
 /**
- * @author rrrfff
- * @version 3.5.1
+ * @author Rprop
+ * @version 3.5.2
  */
 @SuppressWarnings({"unused", "WeakerAccess", "JniMissingFunction"})
 public final class AndHook {
-    public final static String VERSION = "3.5.1";
+    public final static String VERSION = "3.5.2";
     public final static String LOG_TAG = "AndHook";
 
     static {
+        // Check if there is a usable directory for temporary files
+        final File tmpdir = new File(System.getProperty("java.io.tmpdir", "/data/local/tmp/"));
+        if (!tmpdir.canWrite() || !tmpdir.canExecute())
+            throw new RuntimeException("Unable to load AndHook due to missing cache directory");
+
         try {
             System.loadLibrary("AndHook");
         } catch (final UnsatisfiedLinkError e) {
@@ -23,7 +29,7 @@ public final class AndHook {
                 // compatible with libhoudini
                 System.loadLibrary("AndHookCompat");
             } catch (final UnsatisfiedLinkError ignored) {
-                throw new RuntimeException("incompatible platform", e);
+                throw new RuntimeException("Incompatible platform", e);
             }
         }
     }
