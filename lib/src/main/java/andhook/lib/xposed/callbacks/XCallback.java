@@ -24,9 +24,8 @@ public abstract class XCallback implements Comparable<XCallback> {
     public final int priority;
 
     /**
-     * @deprecated This constructor can't be hidden for technical reasons. Nevertheless, don't use it!
+     * This constructor can't be hidden for technical reasons. Nevertheless, don't use it!
      */
-    @Deprecated
     public XCallback() {
         this.priority = PRIORITY_DEFAULT;
     }
@@ -49,9 +48,8 @@ public abstract class XCallback implements Comparable<XCallback> {
         private Bundle extra;
 
         /**
-         * @deprecated This constructor can't be hidden for technical reasons. Nevertheless, don't use it!
+         * This constructor can't be hidden for technical reasons. Nevertheless, don't use it!
          */
-        @Deprecated
         protected Param() {
             callbacks = null;
         }

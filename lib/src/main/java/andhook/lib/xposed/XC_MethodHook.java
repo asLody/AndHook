@@ -14,8 +14,7 @@ public class XC_MethodHook extends XCallback {
     /**
      * Creates a new callback with default priority.
      */
-    @SuppressWarnings("deprecation")
-    public XC_MethodHook() {
+    protected XC_MethodHook() {
         super();
     }
 
@@ -29,7 +28,7 @@ public class XC_MethodHook extends XCallback {
      *
      * @param priority See {@link XCallback#priority}.
      */
-    public XC_MethodHook(final int priority) {
+    XC_MethodHook(final int priority) {
         super(priority);
     }
 
@@ -72,7 +71,7 @@ public class XC_MethodHook extends XCallback {
     /**
      * Wraps information about the method call and allows to influence it.
      */
-    @SuppressWarnings({"unused", "WeakerAccess", "deprecation"})
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static final class MethodHookParam extends XCallback.Param {
         /**
          * Backup method slot.
