@@ -1,8 +1,8 @@
 /*
  *
- *  @author : rrrfff@foxmail.com
- *  @date   : 2018/04/01
- *  https://github.com/rrrfff/AndHook
+ *  @author : Rprop (r_prop@outlook.com)
+ *  @date   : 2018/04/16
+ *  https://github.com/Rprop/AndHook
  *
  */
 #pragma once
@@ -52,8 +52,7 @@ extern "C" {
     void *AKHookFunctionEx(const void *symbol, const uintptr_t overwritable, const void *replace,
                            void *rwx, const uintptr_t size/* = 64*/);
     /// <summary>
-    /// Just like `AKHookFunction`, but will create a wrapper of `replace` (which may not follow The Procedure Call Standard)
-    /// to preserve the contents of the registers
+    /// Just like `AKHookFunction`, but will create a wrapper of `replace` to preserve the contents of the registers
     /// </summary>
     void AKHookInternalFunction(const void *symbol, const void *replace, void **result/* = NULL*/);
     /// <summary>

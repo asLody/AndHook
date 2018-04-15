@@ -9,7 +9,7 @@ import andhook.test.GC;
 import andhook.test.InnerException;
 import andhook.test.JNI;
 import andhook.test.app.MainApplication;
-import andhook.test.app.R;
+import andhook.test.R;
 import andhook.test.Static;
 import andhook.test.SystemClass;
 import andhook.test.Threads;
