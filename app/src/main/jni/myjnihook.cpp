@@ -2,7 +2,7 @@
 #include <android/log.h>
 #include "include/AndHook.h"
 #define AKLog(...) __android_log_print(ANDROID_LOG_VERBOSE, __FUNCTION__, __VA_ARGS__)
-#define AKHook(X)  AKHookFunction(reinterpret_cast<void *>(X), reinterpret_cast<void *>(my_##X), reinterpret_cast<void **>(&sys_##X));
+#define AKHook(X)  AKHookFunction(reinterpret_cast<void *>(X), reinterpret_cast<void *>(my_##X), reinterpret_cast<void **>(&sys_##X))
 
 static jboolean  java_passed = JNI_FALSE;
 static jmethodID sys_getGTalkDeviceId;
@@ -10,7 +10,13 @@ static jstring JNICALL my_getGTalkDeviceId(JNIEnv *env, jclass obj, jlong j)
 {
     // call the original method
     jstring js = reinterpret_cast<jstring>(env->CallStaticObjectMethod(obj, sys_getGTalkDeviceId, j));
-    if (js != NULL) {
+    if (env->ExceptionCheck()) {
+        // if there is a pending exception, js is undefined and cannot be assumed to be NULL
+        js = NULL;
+
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    } else if (js != NULL) {
         AKLog("%s", env->GetStringUTFChars(js, NULL));
     } //if
 
@@ -25,9 +31,9 @@ static jboolean JNICALL java_hook(JNIEnv *env, jclass)
     AKLog("starting jni hook...");
     jclass clazz = env->FindClass("android/provider/Settings");
     if (!hooked) AKJavaHookMethod(env, clazz,
-                                  "getGTalkDeviceId", "(J)Ljava/lang/String;",   // hooked method
-                                  reinterpret_cast<void *>(my_getGTalkDeviceId), // our method 
-                                  &sys_getGTalkDeviceId                          // backup method id
+                                  "getGTalkDeviceId", "(J)Ljava/lang/String;",       // hooked method
+                                  reinterpret_cast<void *>(my_getGTalkDeviceId), // our method
+                                  &sys_getGTalkDeviceId                             // backup method id
     );
     hooked = true;
 
@@ -87,29 +93,43 @@ extern int my_execv(const char *name, char *const *argv)
     return r;
 }
 
-static jboolean JNICALL native_hook(JNIEnv *env, jclass)
+static jboolean JNICALL native_hook(JNIEnv *, jclass)
 {
     static bool hooked = false;
 
     AKLog("starting native hook...");
-    if (!hooked) AKHookFunction(reinterpret_cast<void *>(access),      // hooked function
-                                reinterpret_cast<void *>(my_access),   // our function
-                                reinterpret_cast<void **>(&sys_access) // backup function pointer
-    );
-    if (!hooked) AKHook(execv);
-    if (!hooked) AKHook(execve);
-    hooked = true;
+    if (!hooked) {
+        AKHook(access);
+        AKHook(execv);
+
+        // typical use case
+        const void *libc = AKGetImageByName("libc.so");
+        if (libc != NULL) {
+            AKLog("base address of libc.so is %p", AKGetBaseAddress(libc));
+
+            void *p = AKFindSymbol(libc, "execve");
+            if (p != NULL) AKHookFunction(p,                                        // hooked function
+                                          reinterpret_cast<void *>(my_execve),   // our function
+                                          reinterpret_cast<void **>(&sys_execve) // backup function pointer
+            );
+            AKCloseImage(libc);
+        } //if
+
+        hooked = true;
+    } //if
 
     AKLog("triggering `access` call %p, %p...", &access, sys_execv);
-    access("libAndHook.so", F_OK);
+    access("libAK.so", F_OK);
 
-    AKLog("triggering `execv` call %p, %p...", &execv, sys_execv);
-    char  args[] = "-A";
+    char  path[] = "test";
+    char  args[] = "-T";
     char *argv[] = { args, NULL };
-    execv("ps", argv);
 
     AKLog("triggering `execve` call %p, %p...", &execve, sys_execve);
-    execve("ps", argv, argv);
+    execve(path, argv, argv);
+
+    AKLog("triggering `execv` call %p, %p...", &execv, sys_execv);
+    execv(path, argv);
 
     AKLog("native hook done, native_passed = %u", native_passed);
     return native_passed;
@@ -117,7 +137,7 @@ static jboolean JNICALL native_hook(JNIEnv *env, jclass)
 
 //-------------------------------------------------------------------------
 
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *)
 {
     JNIEnv *env;
     if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
@@ -126,11 +146,11 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
 
     jclass JNI = env->FindClass("andhook/test/JNI");
     env->ExceptionClear();
-    JNINativeMethod gMethods[] = {
-        { "java_hook", "()Z", reinterpret_cast<void *>(&java_hook) },
-        { "native_hook", "()Z", reinterpret_cast<void *>(&native_hook) }
+    JNINativeMethod methods[] = {
+            { "java_hook", "()Z", reinterpret_cast<void *>(&java_hook) },
+            { "native_hook", "()Z", reinterpret_cast<void *>(&native_hook) }
     };
-    env->RegisterNatives(JNI, gMethods, 2);
+    env->RegisterNatives(JNI, methods, 2);
 
     return JNI_VERSION_1_6;
 }
