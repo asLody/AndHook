@@ -15,9 +15,10 @@ public final class MainApplication extends Application {
     public void onCreate() {
         super.onCreate();
         installDefaultUncaughtExceptionHandler();
+        AndHook.ensureNativeLibraryLoaded(null);
 
         Log.i(AndTest.LOG_TAG, "\nApplication started.\n--------------------------------");
-        AndHook.ensureNativeLibraryLoaded();
+
         sApp = new WeakReference<Application>(this);
     }
 

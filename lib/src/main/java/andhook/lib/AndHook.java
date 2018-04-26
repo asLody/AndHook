@@ -9,33 +9,50 @@ import android.util.Log;
 
 /**
  * @author Rprop
- * @version 3.5.2
+ * @version 3.5.6
  */
 @SuppressWarnings({"unused", "WeakerAccess", "JniMissingFunction"})
 public final class AndHook {
-    public final static String VERSION = "3.5.2";
+    private final static String LIB_NAME = "AK";
+    public final static String VERSION = "3.5.6";
     public final static String LOG_TAG = "AndHook";
 
-    static {
+    @SuppressWarnings("all")
+    public static void ensureNativeLibraryLoaded(final File lib_dir) {
+        try {
+            getVersionInfo();
+            return;
+        } catch (final UnsatisfiedLinkError ignored) {
+        }
+
         // Check if there is a usable directory for temporary files
-        final File tmpdir = new File(System.getProperty("java.io.tmpdir", "/data/local/tmp/"));
+        final File tmpdir = new File(System.getProperty("java.io.tmpdir",
+                "/data/local/tmp/"));
         if (!tmpdir.canWrite() || !tmpdir.canExecute())
-            throw new RuntimeException("Unable to load AndHook due to missing cache directory");
+            throw new RuntimeException(
+                    "Unable to load AndHook due to missing cache directory");
 
         try {
-            System.loadLibrary("AndHook");
+            if (lib_dir == null) {
+                System.loadLibrary(LIB_NAME);
+            } else {
+                System.load(new File(lib_dir, "lib" + LIB_NAME + ".so")
+                        .getAbsolutePath());
+            }
         } catch (final UnsatisfiedLinkError e) {
             try {
                 // compatible with libhoudini
-                System.loadLibrary("AndHookCompat");
+                if (lib_dir == null) {
+                    System.loadLibrary(LIB_NAME + "Compat");
+                } else {
+                    System.load(new File(lib_dir, "lib" + LIB_NAME + "Compat"
+                            + ".so").getAbsolutePath());
+                }
             } catch (final UnsatisfiedLinkError ignored) {
-                throw new RuntimeException("Incompatible platform", e);
+                throw new RuntimeException("Incompatible platform "
+                        + android.os.Build.VERSION.SDK_INT, e);
             }
         }
-    }
-
-    public static void ensureNativeLibraryLoaded() {
-        new AndHook();
     }
 
     public static native String getVersionInfo();
@@ -45,8 +62,8 @@ public final class AndHook {
     public static native int backup(final Class<?> clazz, final String name,
                                     final String signature);
 
-    public static native boolean hook(final Member origin,
-                                      final Object extra, int shared_backup);
+    public static native boolean hook(final Member origin, final Object extra,
+                                      int shared_backup);
 
     public static native boolean hook(final Class<?> clazz, final String name,
                                       final String signature, final Object extra, int shared_backup);
@@ -94,8 +111,8 @@ public final class AndHook {
     @SuppressWarnings("all")
     public static boolean ensureClassInitialized(final Class<?> clazz) {
         if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
-            Log.w(LOG_TAG, "interface or abstract class `" + clazz.getName() +
-                    "` cannot be initialized!");
+            Log.w(LOG_TAG, "interface or abstract class `" + clazz.getName()
+                    + "` cannot be initialized!");
             return false;
         }
         return initializeClass(clazz);
@@ -218,9 +235,12 @@ public final class AndHook {
      * Returns the result of dynamically invoking this method. Equivalent to
      * {@code receiver.methodName(arg1, arg2, ... , argN)}.
      * <p>
-     * <p>If the method is static, the receiver argument is ignored (and may be null).
      * <p>
-     * <p>If the invocation completes normally, the return value itself is
+     * If the method is static, the receiver argument is ignored (and may be
+     * null).
+     * <p>
+     * <p>
+     * If the invocation completes normally, the return value itself is
      * returned. If the method is declared to return a primitive type, the
      * return value is boxed. If the return type is void, null is returned.
      */

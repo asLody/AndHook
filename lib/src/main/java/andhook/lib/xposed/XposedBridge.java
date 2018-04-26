@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * This class contains most of Xposed's central logic, such as initialization and callbacks used by
  * the native side. It also includes methods to add new hooks.
  * <p>
- * Latest Update 2018/04/16
+ * Latest Update 2018/04/20
  */
 @SuppressWarnings("WeakerAccess")
 public final class XposedBridge {
@@ -36,6 +36,10 @@ public final class XposedBridge {
 
     // built-in handlers
     private static final ConcurrentHashMap<Member, AdditionalHookInfo> sHookedMethodInfos = new ConcurrentHashMap<>();
+
+    static {
+        AndHook.ensureNativeLibraryLoaded(null);
+    }
 
     /**
      * Writes a message to the logcat error log.

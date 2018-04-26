@@ -9,11 +9,11 @@ LOCAL_LDFLAGS += -Wl,--strip-all
 LOCAL_C_INCLUDES := $(LOCAL_PATH)
 LOCAL_SRC_FILES := myjnihook.cpp
 LOCAL_LDLIBS := -llog
-#LOCAL_SHARED_LIBRARIES += libAndHook
-LOCAL_LDLIBS += -L$(LOCAL_PATH)/../../../../lib/src/main/jniLibs/$(TARGET_ARCH_ABI)/ -lAndHook
+#LOCAL_SHARED_LIBRARIES += libAK
+LOCAL_LDLIBS += -L$(LOCAL_PATH)/../../../../lib/src/main/jniLibs/$(TARGET_ARCH_ABI)/ -lAK
 include $(BUILD_SHARED_LIBRARY)
 
 #include $(CLEAR_VARS)
-#OCAL_MODULE := libAndHook
-#LOCAL_SRC_FILES := libAndHook.so
+#OCAL_MODULE := libAK
+#LOCAL_SRC_FILES := libAK
 #include $(PREBUILT_SHARED_LIBRARY)

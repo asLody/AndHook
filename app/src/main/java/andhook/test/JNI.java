@@ -14,7 +14,7 @@ public final class JNI {
 
         try {
             // libAndHook.so must be loaded before libmyjnihook.so
-            AndHook.ensureNativeLibraryLoaded();
+            AndHook.ensureNativeLibraryLoaded(null);
             System.loadLibrary("myjnihook");
         } catch (final Throwable t) {
             MainActivity.alert(t);

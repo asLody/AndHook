@@ -12,6 +12,9 @@ AndHook is a lightweight hook framework for android. It is primarily written in 
 # How the method was intercepted?
 ![CallFlow](https://github.com/Rprop/AndHook/raw/master/CallFlow.png)
 
+# Special Thanks
+- cly.comp
+
 # References
 - [Cydia Substrate](https://github.com/Rprop/AndHook/tree/6cca8575771d13cbe3907442e4ed6808381b6fd5/jni/utils/Substrate) (armeabi-v7a, x86, x86_64)
 - [And64InlineHook](https://github.com/Rprop/And64InlineHook) (arm64-v8a)
