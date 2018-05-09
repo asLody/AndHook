@@ -1,6 +1,6 @@
 #include <jni.h>
 #include <android/log.h>
-#include "include/AndHook.h"
+#include <AndHook.h>
 #define AKLog(...) __android_log_print(ANDROID_LOG_VERBOSE, __FUNCTION__, __VA_ARGS__)
 #define AKHook(X)  AKHookFunction(reinterpret_cast<void *>(X), reinterpret_cast<void *>(my_##X), reinterpret_cast<void **>(&sys_##X))
 

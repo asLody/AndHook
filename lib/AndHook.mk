@@ -1,0 +1,7 @@
+LOCAL_PATH := $(call my-dir)
+include $(CLEAR_VARS)
+LOCAL_MODULE            := AK
+LOCAL_SRC_FILES         := $(LOCAL_PATH)/src/main/jniLibs/$(TARGET_ARCH_ABI)/lib$(LOCAL_MODULE)$(TARGET_SONAME_EXTENSION)
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
+LOCAL_EXPORT_LDLIBS     := -llog
+include $(PREBUILT_SHARED_LIBRARY)

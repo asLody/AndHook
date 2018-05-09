@@ -1,7 +1,7 @@
 /*
  *
  *  @author : Rprop (r_prop@outlook.com)
- *  @date   : 2018/04/26
+ *  @date   : 2018/05/05
  *  https://github.com/Rprop/AndHook
  *
  */
@@ -18,7 +18,7 @@
 # define AK_DEFAULT(v)      = v
 extern "C" {
 #else
-# define AK_BOOL            int
+# define AK_BOOL            char
 # define AK_DEFAULT(v)
 #endif
 
@@ -110,17 +110,17 @@ extern "C" {
     /// <summary>
     /// Intercepts java method using native code
     /// </summary>
-    void AKJavaHookMethodV(jmethodID methodId, const void *replace, jmethodID *result AK_DEFAULT(NULL));
+    void AKJavaHookMethodV(JNIEnv *env, jmethodID methodId, const void *replace, jmethodID *result AK_DEFAULT(NULL));
     /// <summary>
     /// Marks the specified java method as native (if not) and backups original method if `result` != NULL
     /// </summary>
-    AK_BOOL AKForceNativeMethod(jmethodID methodId, const void *jni_entrypoint, AK_BOOL fast_native AK_DEFAULT(0),
+    AK_BOOL AKForceNativeMethod(JNIEnv *env, jmethodID methodId, const void *jni_entrypoint, AK_BOOL fast_native AK_DEFAULT(0),
                                 jmethodID *result AK_DEFAULT(NULL));
     /// <summary>
     /// Copies the specified java method.
     /// @warning The result method's access flags may be changed if the original method is virtual
     /// </summary>
-    AK_BOOL AKShadowCopyMethod(jmethodID methodId, jmethodID *result);
+    AK_BOOL AKShadowCopyMethod(JNIEnv *env, jmethodID methodId, jmethodID *result);
     /// <summary>
     /// Restores java method from backup
     /// </summary>
@@ -136,23 +136,30 @@ extern "C" {
     /// <summary>
     /// Gets the entry of the specified native method or NULL if the method is not native or has not yet been registered
     /// </summary>
-    void *AKGetNativeEntry(jmethodID methodId);
+    void *AKGetNativeEntry(jmethodID methodId, AK_BOOL *critical_native AK_DEFAULT(NULL));
     /// <summary>
-    /// Creates a ClassLoader that loads classes from .jar and .apk files containing a classes.dex entry.
-    /// This function never throws exceptions
+    /// Creates a DexClassLoader that loads classes from .jar and .apk files containing a classes.dex entry.
+    /// This function never throws exceptions.
+    /// @warning parameter `cache_dir` is deprecated and has no effect since Android O
     /// </summary>
     jobject AKLoadFileDex(JNIEnv *env, const char *dex_path, const char *cache_dir AK_DEFAULT(NULL),
                           const char *lib_path AK_DEFAULT(NULL), jobject parent AK_DEFAULT(NULL));
     /// <summary>
-    /// Creates a ClassLoader that loads classes from a buffer containing a DEX file [ART only, since API 26].
+    /// Creates a PathClassLoader that operates on two given lists of files and directories.
+    /// This function never throws exceptions
+    /// </summary>
+    jobject AKLoadPathDex(JNIEnv *env, const char *dex_path,
+                          const char *lib_path AK_DEFAULT(NULL), jobject parent AK_DEFAULT(NULL));
+    /// <summary>
+    /// Creates a InMemoryClassLoader that loads classes from a buffer containing a DEX file [ART only, since API 26].
     /// This function never throws exceptions
     /// </summary>
     jobject AKLoadMemoryDex(JNIEnv *env, const void *buffer, jlong capacity, jobject parent AK_DEFAULT(NULL));
     /// <summary>
     /// Loads a locally-defined class with the specified classloader or the system ClassLoader
-    /// @warning Raised exceptions is possible
+    /// This function never throws exceptions
     /// </summary>
-    jclass AKLoadClass(JNIEnv *env, jobject classloader, const char *name);
+    jclass AKLoadClass(JNIEnv *env, jobject classloader, const char *name, jthrowable *exception AK_DEFAULT(NULL));
     /// <summary>
     /// Returns the system ClassLoader which represents the CLASSPATH
     /// </summary>
@@ -173,6 +180,10 @@ extern "C" {
     /// Returns the absolute path to the application specific cache directory with trailing slash
     /// </summary>
     const char *AKGetCacheDirectory();
+    /// <summary>
+    /// Sets the absolute path to the cache directory
+    /// </summary>
+    const char *AKSetCacheDirectory(const char *path);
     /// <summary>
     /// Returns the absolute path to the application specific libs directory with trailing slash
     /// </summary>
@@ -210,6 +221,60 @@ extern "C" {
     /// Unlocks and broadcasts a notification to all threads interrupted by AKLockJavaThreads
     /// </summary>
     void AKUnlockJavaThreads();
+
+    /// <summary>
+    /// Table of interface function pointers
+    /// </summary>
+    struct AKInvokeInterface {
+        intptr_t version;
+        const void *(*GetImageByName)(const char *name /* = AK_ANDROID_RUNTIME */);
+        void *(*FindSymbol)(const void *handle, const char *symbol);
+        void *(*GetBaseAddress)(const void *handle);
+        void(*CloseImage)(const void *handle);
+        void(*HookFunction)(const void *symbol, const void *replace, void **result /* = NULL */);
+        void *(*HookFunctionV)(const void *symbol, const void *replace, void *rwx, const uintptr_t size /* = 64 */);
+        void *(*HookFunctionEx)(const void *symbol, const uintptr_t overwritable, const void *replace, void *rwx, const uintptr_t size /* = 64 */);
+        void *(*WrapFunction)(const void *func);
+        void(*PrintHexBinary)(const void *addr, uintptr_t len, const char *name /* = NULL */);
+        AK_BOOL(*ProtectMemory)(const void *addr, uintptr_t len, int prot /* = AK_RWX */);
+        AK_BOOL(*PatchMemory)(const void *addr, const void *data, uintptr_t len);
+        AK_BOOL(*SuspendAllThreads)();
+        void(*ResumeAllThreads)();
+        void(*EnableFastDexLoad)(AK_BOOL enable);
+        const char *(*LastBuildDate)();
+        jint(*InitializeOnce)(JNIEnv *env /* = NULL */, JavaVM *jvm /* = NULL */);
+        void(*RegisterLibrary)(JNIEnv *env, jobject classloader);
+        void(*JavaHookMethod)(JNIEnv *env, jclass clazz, const char *method, const char *signature, const void *replace, jmethodID *result /* = NULL */);
+        void(*JavaHookMethodV)(JNIEnv *env, jmethodID methodId, const void *replace, jmethodID *result /* = NULL */);
+        AK_BOOL(*ForceNativeMethod)(JNIEnv *env, jmethodID methodId, const void *jni_entrypoint, AK_BOOL fast_native /* = 0 */, jmethodID *result /* = NULL */);
+        AK_BOOL(*ShadowCopyMethod)(JNIEnv *env, jmethodID methodId, jmethodID *result);
+        AK_BOOL(*RestoreMethod)(jmethodID j_backup, jmethodID j_dest);
+        const void *(*RegisterNative)(jmethodID methodId, const void *native_method, AK_BOOL fast_native /* = 0 */);
+        void *(*GetNativeEntry)(jmethodID methodId, AK_BOOL *critical_native /* = NULL */);
+        jobject(*LoadFileDex)(JNIEnv *env, const char *dex_path, const char *cache_dir /* = NULL */, const char *lib_path /* = NULL */, jobject parent /* = NULL */);
+        jobject(*LoadPathDex)(JNIEnv *env, const char *dex_path, const char *lib_path /* = NULL */, jobject parent /* = NULL */);
+        jobject(*LoadMemoryDex)(JNIEnv *env, const void *buffer, jlong capacity, jobject parent /* = NULL */);
+        jclass(*LoadClass)(JNIEnv *env, jobject classloader, const char *name, jthrowable *exception);
+        jobject(*GetSystemClassLoader)(JNIEnv *env);
+        jobject(*GetClassLoader)(JNIEnv *env, jclass clazz);
+        jobject(*GetContextClassLoader)(JNIEnv *env, jobject context);
+        int(*GetSdkVersion)();
+        const char *(*GetCacheDirectory)();
+        const char *(*SetCacheDirectory)(const char *path);
+        const char *(*GetNativeLibsDirectory)();
+        void(*OptimizeMethod)(jmethodID method);
+        AK_BOOL(*ForceJitCompile)(jmethodID method);
+        void(*DeoptimizeMethod)(jmethodID method);
+        void(*DumpClassMethods)(JNIEnv *env, jclass clazz /* = NULL */, const char *clsname /* = NULL */);
+        AK_BOOL(*StartJavaDaemons)(JNIEnv *env);
+        AK_BOOL(*StopJavaDaemons)(JNIEnv *env);
+        AK_BOOL(*LockJavaThreads)();
+        void(*UnlockJavaThreads)();
+    };
+    /// <summary>
+    /// Retrieves invocation interfaces
+    /// </summary>
+    struct AKInvokeInterface *AKGetInvokeInterface();
 
 #ifdef __cplusplus
 }
