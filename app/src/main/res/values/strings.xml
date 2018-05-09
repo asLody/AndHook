@@ -10,7 +10,8 @@
     <string name="Static">Static</string>
     <string name="Virtual">Virtual</string>
     <string name="WideningConversion">WideningConversion</string>
-    <string name="SystemClass">SystemClass</string>
+    <string name="SystemClass">System</string>
+    <string name="Native">Native</string>
     <string name="Thread">Thread</string>
     <string name="Exception">Exception</string>
 

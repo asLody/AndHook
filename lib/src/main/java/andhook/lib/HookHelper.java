@@ -19,8 +19,7 @@ public final class HookHelper {
     public static final String constructorName = "<init>";
     private static final ConcurrentHashMap<Pair<String, String>, Integer> sBackups = new ConcurrentHashMap<>();
 
-    private static void warnKnownIssue(final Class<?> clazz,
-                                       final Method replace) {
+    private static void warnKnownIssue(final Method replace) {
         if (!Modifier.isStatic(replace.getModifiers())
                 || replace.getParameterTypes().length < 1
                 || replace.getParameterTypes()[0].isPrimitive()) {
@@ -37,7 +36,7 @@ public final class HookHelper {
         if (uniqueKey(replace) == null)
             return;
 
-        warnKnownIssue(origin.getDeclaringClass(), replace);
+        warnKnownIssue(replace);
         final int slot = AndHook.backup(origin);
         if (slot != -1 && saveBackupSlot(slot, replace)) {
             AndHook.hook(origin, replace, slot);
@@ -49,7 +48,7 @@ public final class HookHelper {
         if (uniqueKey(replace) == null)
             return;
 
-        warnKnownIssue(clazz, replace);
+        warnKnownIssue(replace);
         final int slot = AndHook.backup(clazz, name, signature);
         if (slot != -1 && saveBackupSlot(slot, replace)) {
             AndHook.hook(clazz, name, signature, replace, slot);

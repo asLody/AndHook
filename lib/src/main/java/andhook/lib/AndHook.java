@@ -9,12 +9,12 @@ import android.util.Log;
 
 /**
  * @author Rprop
- * @version 3.5.6
+ * @version 3.5.8
  */
 @SuppressWarnings({"unused", "WeakerAccess", "JniMissingFunction"})
 public final class AndHook {
     private final static String LIB_NAME = "AK";
-    public final static String VERSION = "3.5.6";
+    public final static String VERSION = "3.5.8";
     public final static String LOG_TAG = "AndHook";
 
     @SuppressWarnings("all")

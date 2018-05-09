@@ -111,8 +111,6 @@ public final class XposedBridge {
      *
      * @param hookMethod The method for which the callback should be removed.
      * @param callback   The reference to the callback as specified in {@link #hookMethod}.
-     * @deprecated Use {@link XC_MethodHook.Unhook#unhook} instead. An instance of the {@code Unhook}
-     * class is returned when you hook the method.
      */
     @SuppressWarnings("all")
     public static void unhookMethod(final Member hookMethod, final XC_MethodHook callback) {
