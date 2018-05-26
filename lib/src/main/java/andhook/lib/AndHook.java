@@ -9,12 +9,12 @@ import android.util.Log;
 
 /**
  * @author Rprop
- * @version 3.5.8
+ * @version 3.6.0
  */
 @SuppressWarnings({"unused", "WeakerAccess", "JniMissingFunction"})
 public final class AndHook {
     private final static String LIB_NAME = "AK";
-    public final static String VERSION = "3.5.8";
+    public final static String VERSION = "3.6.0";
     public final static String LOG_TAG = "AndHook";
 
     @SuppressWarnings("all")
@@ -29,8 +29,7 @@ public final class AndHook {
         final File tmpdir = new File(System.getProperty("java.io.tmpdir",
                 "/data/local/tmp/"));
         if (!tmpdir.canWrite() || !tmpdir.canExecute())
-            throw new RuntimeException(
-                    "Unable to load AndHook due to missing cache directory");
+            Log.w(LOG_TAG, "Missing cache directory " + tmpdir);
 
         try {
             if (lib_dir == null) {

@@ -8,6 +8,7 @@ public final class Native {
     private static boolean passed = false;
 
     // @CriticalNative since Android O
+    @SuppressWarnings("unused")
     @Hook(clazz = android.os.SystemClock.class, need_origin = true)
     private static long currentThreadTimeMillis(final Class<?> clazz) {
         passed = true;

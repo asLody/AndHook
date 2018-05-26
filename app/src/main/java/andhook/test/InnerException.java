@@ -5,6 +5,8 @@ import andhook.lib.xposed.XposedHelpers;
 import andhook.test.ui.MainActivity;
 
 public final class InnerException {
+    private static boolean passed = false;
+
     private static final class k {
         static synchronized void a() {
             MainActivity.output("k->a");
@@ -77,15 +79,14 @@ public final class InnerException {
                     throws Throwable {
                 super.beforeHookedMethod(param);
                 MainActivity.output("q->d before");
+                passed = true;
             }
         });
 
-        boolean passed = false;
         try {
             q.a();
         } catch (final UnsupportedOperationException e) {
             MainActivity.output(e);
-            passed = true;
         }
 
         if (passed)

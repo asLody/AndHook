@@ -8,7 +8,9 @@ public final class Constructor {
     private static boolean passed;
 
     private Constructor() {
-        MainActivity.output("original constructor hit, this = " + this);
+        final Object thiz = this; // dummy code to avoid inlining
+        MainActivity.output("original constructor hit, this = " + thiz +
+                ", hash = " + thiz.hashCode());
     }
 
     @SuppressWarnings("unused")

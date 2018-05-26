@@ -1,7 +1,7 @@
 /*
  *
  *  @author : Rprop (r_prop@outlook.com)
- *  @date   : 2018/05/05
+ *  @date   : 2018/05/26
  *  https://github.com/Rprop/AndHook
  *
  */
@@ -23,15 +23,20 @@ extern "C" {
 #endif
 
     /// <summary>
+    /// Loads the specified module using system linker or NULL if failed.
+    /// @warning `caller_addr` is necessary for loading system libraries since Android N
+    /// </summary>
+    const void *AKLoadImage(const char *path, int flag, const void *caller_addr AK_DEFAULT(NULL));
+    /// <summary>
     /// Gets handle to specified module or NULL if the target is not currently loaded
     /// </summary>
     const void *AKGetImageByName(const char *name AK_DEFAULT(AK_ANDROID_RUNTIME));
     /// <summary>
-    /// Gets the address of defined symbols or NULL
+    /// Gets the address of defined symbol or NULL
     /// </summary>
     void *AKFindSymbol(const void *handle, const char *symbol);
     /// <summary>
-    /// Gets the base address of defined symbols or NULL
+    /// Gets the base address of defined module or NULL
     /// </summary>
     void *AKGetBaseAddress(const void *handle);
     /// <summary>
@@ -112,7 +117,8 @@ extern "C" {
     /// </summary>
     void AKJavaHookMethodV(JNIEnv *env, jmethodID methodId, const void *replace, jmethodID *result AK_DEFAULT(NULL));
     /// <summary>
-    /// Marks the specified java method as native (if not) and backups original method if `result` != NULL
+    /// Marks the specified java method as native (if not) and backups original method if `result` != NULL.
+    /// @warning The method must not be inlined or in any threads call stack
     /// </summary>
     AK_BOOL AKForceNativeMethod(JNIEnv *env, jmethodID methodId, const void *jni_entrypoint, AK_BOOL fast_native AK_DEFAULT(0),
                                 jmethodID *result AK_DEFAULT(NULL));
@@ -227,6 +233,7 @@ extern "C" {
     /// </summary>
     struct AKInvokeInterface {
         intptr_t version;
+        const void *(*LoadImage)(const char *path, int flag, const void *caller_addr /* = NULL*/);
         const void *(*GetImageByName)(const char *name /* = AK_ANDROID_RUNTIME */);
         void *(*FindSymbol)(const void *handle, const char *symbol);
         void *(*GetBaseAddress)(const void *handle);

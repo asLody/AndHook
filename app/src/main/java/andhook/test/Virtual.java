@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 import andhook.lib.AndHook;
 import andhook.lib.HookHelper;
 import andhook.test.ui.MainActivity;
+
 import android.util.Log;
 
 public final class Virtual {
@@ -39,7 +40,10 @@ public final class Virtual {
 
     private static class A {
         public int get() {
-            MainActivity.output("public A::get hit, this = " + this);
+            // small methods without reachable non-instruction limits will always be inlined
+            final Object thiz = this;
+            MainActivity.output("public A::get hit, this = " + thiz +
+                    ", hash = " + thiz.hashCode());
             return 0;
         }
     }
@@ -48,6 +52,7 @@ public final class Virtual {
         @Override
         public int get() {
             MainActivity.output("public B::get hit, this = " + this);
+            // the following statement could be inlined if --compiler-filter=everything
             return super.get() + 1;
         }
 

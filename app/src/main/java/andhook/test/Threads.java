@@ -15,9 +15,9 @@ public final class Threads {
 
         passed = false;
 
-        // @NOTE that hooking methods of Thread.class is possibly unstable
-        // as they may be on the stack before, which could result in
-        // unexpected stack unwinding.
+        // Methods of Thread are likely to be in threads call stack already, 
+        // which could result in unexpected stack unwinding.
+        // Is it possible that we can fix up the stack layout?
         AndHook.stopDaemons();
         android.os.SystemClock.sleep(100);
 

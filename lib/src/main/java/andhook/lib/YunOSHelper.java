@@ -14,7 +14,7 @@ public final class YunOSHelper {
     private static final HashMap<Class<?>, String> PRIMITIVE_TO_SIGNATURE;
 
     static {
-        PRIMITIVE_TO_SIGNATURE = new HashMap<Class<?>, String>(9);
+        PRIMITIVE_TO_SIGNATURE = new HashMap<>(9);
         PRIMITIVE_TO_SIGNATURE.put(byte.class, "B");
         PRIMITIVE_TO_SIGNATURE.put(char.class, "C");
         PRIMITIVE_TO_SIGNATURE.put(short.class, "S");
