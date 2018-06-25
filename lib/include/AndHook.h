@@ -1,7 +1,7 @@
 /*
  *
  *  @author : Rprop (r_prop@outlook.com)
- *  @date   : 2018/05/26
+ *  @date   : 2018/06/25
  *  https://github.com/Rprop/AndHook
  *
  */
@@ -35,6 +35,10 @@ extern "C" {
     /// Gets the address of defined symbol or NULL
     /// </summary>
     void *AKFindSymbol(const void *handle, const char *symbol);
+    /// <summary>
+    /// Gets the address of anonymous symbol or NULL
+    /// </summary>
+    void *AKFindAnonymity(const void *handle, const uintptr_t st_value);
     /// <summary>
     /// Gets the base address of defined module or NULL
     /// </summary>
@@ -236,6 +240,7 @@ extern "C" {
         const void *(*LoadImage)(const char *path, int flag, const void *caller_addr /* = NULL*/);
         const void *(*GetImageByName)(const char *name /* = AK_ANDROID_RUNTIME */);
         void *(*FindSymbol)(const void *handle, const char *symbol);
+        void *(*FindAnonymity)(const void *handle, const uintptr_t st_value);
         void *(*GetBaseAddress)(const void *handle);
         void(*CloseImage)(const void *handle);
         void(*HookFunction)(const void *symbol, const void *replace, void **result /* = NULL */);
