@@ -1,7 +1,7 @@
 /*
  *
  *  @author : Rprop (r_prop@outlook.com)
- *  @date   : 2018/06/25
+ *  @date   : 2018/07/19
  *  https://github.com/Rprop/AndHook
  *
  */
@@ -231,6 +231,10 @@ extern "C" {
     /// Unlocks and broadcasts a notification to all threads interrupted by AKLockJavaThreads
     /// </summary>
     void AKUnlockJavaThreads();
+    /// <summary>
+    /// Enables or disables logging
+    /// </summary>
+    void AKDisableLogging(bool state AK_DEFAULT(false));
 
     /// <summary>
     /// Table of interface function pointers
@@ -282,6 +286,7 @@ extern "C" {
         AK_BOOL(*StopJavaDaemons)(JNIEnv *env);
         AK_BOOL(*LockJavaThreads)();
         void(*UnlockJavaThreads)();
+        void(*DisableLogging)(bool state);
     };
     /// <summary>
     /// Retrieves invocation interfaces
