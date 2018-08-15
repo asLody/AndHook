@@ -1,0 +1,25 @@
+大佬你好：
+
+我下载项目zip之后，adt倒入，得到两个项目：
+main
+MainActivity
+
+修改他们的project properties中android为4.x版本，
+最后打包成apk，两个都能打包apk，但里面都没有so文件，
+main，没有在手机上生成图标，我理解为“库”
+MainActivity 直接崩溃，adb logcat 啥也没看到，AndHook_Test的log一个也没有，一个4.2.1的root手机和一个8.1的未root的手机都不行！
+
+我给MainActivity项目增加了一个ndk的builder，然后编译，打包出来的apk里面有libAK.so和libmyjnihook.so，但同样是崩溃，运行不了。
+
+============================================
+求指教，如此厉害的项目，应该大家用起来啊。
+EMail:28181306@qq.com
+谢谢，祝好！
+============================================
+
+最后
+MainActivity项目的Application.mk
+存在一个错误：
+APP_CPPFLAGS     := -std=c++1y
+我觉得应该改为： 
+APP_CPPFLAGS     := -std=c++11
