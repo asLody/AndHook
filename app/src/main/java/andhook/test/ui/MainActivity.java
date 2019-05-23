@@ -16,13 +16,13 @@ import android.widget.Toast;
 
 import andhook.lib.AndHook;
 import andhook.test.AndTest;
-import andhook.test.SimpleHookConfig;
 import andhook.test.Constructor;
 import andhook.test.GC;
 import andhook.test.InnerException;
 import andhook.test.JNI;
 import andhook.test.Native;
 import andhook.test.R;
+import andhook.test.SimpleHookConfig;
 import andhook.test.Static;
 import andhook.test.SystemClass;
 import andhook.test.Threads;
@@ -193,5 +193,19 @@ public class MainActivity extends Activity {
                 InnerException.test();
             }
         });
+    }
+
+    @Override
+    protected void onStart() {
+        Log.i(TAG, "MainActivity.super::onStart: start");
+        super.onStart();
+        Log.i(TAG, "MainActivity.super::onStart: end");
+    }
+
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "MainActivity.super::onResume: start");
+        super.onResume();
+        Log.i(TAG, "MainActivity.super::onResume: end");
     }
 }
