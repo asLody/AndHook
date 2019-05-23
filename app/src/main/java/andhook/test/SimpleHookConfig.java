@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import andhook.lib.HookHelper;
+import andhook.test.ui.MainActivity;
 
 /**
  * @author <a href="mailto:qq2325690622@gmail.com>Deng Chao</a> on 2019/5/23
@@ -59,6 +60,14 @@ public class SimpleHookConfig {
     }
 
     /**
+     * 修改参数
+     */
+    @HookHelper.Hook(clazz = MainActivity.class)
+    private static void logTheNumber(MainActivity activity, int number) {
+        HookHelper.invokeVoidOrigin(activity, 2);
+    }
+
+    /**
      * 必须使用静态方法进行配置.
      * <p>
      * 使用非静态方法进行配置时会出现错误日志:
@@ -71,4 +80,12 @@ public class SimpleHookConfig {
         Log.d(TAG, "nonStaticConfig: This is a actually not called");
         HookHelper.invokeVoidOrigin(activity);
     }
+
+    // 很显然, @HookHelper.Hook 注解没有设计好:
+    // 1. 注解作为内部类存在, 导致注解看起来很长.
+    // 2. 注解的参数类型中的 clazz 总是必填的, name/value 是选填的. 导致必须手写 clazz = Object.class .
+    // @HookHelper.Hook(clazz = Object.class)
+    //
+    // 如果把注解提取出来, 并且 value 作为 Class 类型的参数, method 作为选填的参数, 则看起来会好很多.
+    // @Hook(Object.class)
 }

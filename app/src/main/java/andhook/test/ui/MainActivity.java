@@ -92,6 +92,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         Log.i(AndTest.LOG_TAG, "MainActivity.super::onCreate end");
 
+        logTheNumber(1);
 
         setContentView(R.layout.activity_main);
 
@@ -207,5 +208,9 @@ public class MainActivity extends Activity {
         Log.i(TAG, "MainActivity.super::onResume: start");
         super.onResume();
         Log.i(TAG, "MainActivity.super::onResume: end");
+    }
+
+    private void logTheNumber(int i) {
+        Log.i(TAG, "logTheNumber: i should be 1, but " + i);
     }
 }
