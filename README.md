@@ -8,6 +8,8 @@ A dynamic instrumentation framework designed for usage within process scope.
 
 # How to use
 
+In `app` module, we use an android project to show how to use the AndHook.
+
 ## Hook java method
 
 ```java
@@ -23,7 +25,6 @@ public class SimpleHookConfig {
 }
 
 public class MainApplication extends Application {
-    
     @Override
     public void onCreate() {
         super.onCreate();
@@ -41,7 +42,7 @@ public class MainActivity extends Activity {
     }
 }
 
-// you will see log in logcat like:
+// After MainActivity launched, you will be able to see log in logcat like:
 // AndHook_Test: MainActivity.super::onStart: start
 // AndHook_Test: onStart: HookedActivity::onStart start, this is class andhook.test.ui.MainActivity
 // AndHook_Test: onStart: HookedActivity::onStart end, this is class andhook.test.ui.MainActivity
