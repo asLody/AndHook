@@ -7,10 +7,7 @@ android {
         applicationId "andhook.test"
         minSdkVersion 14
         targetSdkVersion 28
-        compileOptions {
-            sourceCompatibility JavaVersion.VERSION_1_8
-            targetCompatibility JavaVersion.VERSION_1_8
-        }
+
         externalNativeBuild {
             ndkBuild {
                 abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
