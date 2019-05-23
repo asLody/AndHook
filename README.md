@@ -11,18 +11,9 @@ A dynamic instrumentation framework designed for usage within process scope.
 ## Hook java method
 
 ```java
-public class MainApplication extends Application {
-    
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        // Apply hook configuration
-        HookHelper.applyHooks(SimpleHookConfig.class);
-    }
-}
-
+/** Define hook configuration */
 public class SimpleHookConfig {
-    /** * Hook Activity's onStart() method */
+    /** Hook Activity's onStart() method */
     @HookHelper.Hook(clazz = Activity.class)
     private static void onStart(Activity activity) {
         Log.d(AndTest.LOG_TAG, "onStart: HookedActivity::onStart start, this is " + activity.getClass());
@@ -31,11 +22,21 @@ public class SimpleHookConfig {
     }
 }
 
+public class MainApplication extends Application {
+    
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        // Apply hook configuration before target method running.
+        HookHelper.applyHooks(SimpleHookConfig.class);
+    }
+}
+
 public class MainActivity extends Activity {
     @Override
     protected void onStart() {
         Log.i(TAG, "MainActivity.super::onStart: start");
-        super.onStart();
+        super.onStart();// the method which is hooked
         Log.i(TAG, "MainActivity.super::onStart: end");
     }
 }
