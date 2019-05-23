@@ -81,11 +81,4 @@ public class SimpleHookConfig {
         HookHelper.invokeVoidOrigin(activity);
     }
 
-    // 很显然, @HookHelper.Hook 注解没有设计好:
-    // 1. 注解作为内部类存在, 导致注解看起来很长.
-    // 2. 注解的参数类型中的 clazz 总是必填的, name/value 是选填的. 导致必须手写 clazz = Object.class .
-    // @HookHelper.Hook(clazz = Object.class)
-    //
-    // 如果把注解提取出来, 并且 value 作为 Class 类型的参数, method 作为选填的参数, 则看起来会好很多.
-    // @Hook(Object.class)
 }
