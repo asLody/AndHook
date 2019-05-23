@@ -28,7 +28,9 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        // Apply hook configuration before target method running.
+        // Make sure AndHook's native library is loaded first.
+        AndHook.ensureNativeLibraryLoaded(null);
+        // Then apply hook configuration before target method running.
         HookHelper.applyHooks(SimpleHookConfig.class);
     }
 }
