@@ -6,6 +6,47 @@ A dynamic instrumentation framework designed for usage within process scope.
 - java method instrumentation (hook java method in Java/C/C++)
 - native interception (hook native C/C++ functions in C/C++)
 
+# How to use
+
+## Hook java method
+
+```java
+public class MainApplication extends Application {
+    
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        // Apply hook configuration
+        HookHelper.applyHooks(SimpleHookConfig.class);
+    }
+}
+
+public class SimpleHookConfig {
+    /** * Hook Activity's onStart() method */
+    @HookHelper.Hook(clazz = Activity.class)
+    private static void onStart(Activity activity) {
+        Log.d(AndTest.LOG_TAG, "onStart: HookedActivity::onStart start, this is " + activity.getClass());
+        HookHelper.invokeVoidOrigin(activity);// invoke the origin method
+        Log.d(AndTest.LOG_TAG, "onStart: HookedActivity::onStart end, this is " + activity.getClass());
+    }
+}
+
+public class MainActivity extends Activity {
+    @Override
+    protected void onStart() {
+        Log.i(TAG, "MainActivity.super::onStart: start");
+        super.onStart();
+        Log.i(TAG, "MainActivity.super::onStart: end");
+    }
+}
+
+// you will see log in logcat like:
+// AndHook_Test: MainActivity.super::onStart: start
+// AndHook_Test: onStart: HookedActivity::onStart start, this is class andhook.test.ui.MainActivity
+// AndHook_Test: onStart: HookedActivity::onStart end, this is class andhook.test.ui.MainActivity
+// AndHook_Test: MainActivity.super::onStart: end
+```
+
 # How does AndHook work?
 ![AndHook](https://github.com/Rprop/AndHook/raw/master/AndHook.png)
 
