@@ -8,7 +8,7 @@ A dynamic instrumentation framework designed for usage within process scope.
 
 # How to use
 
-In `app` module, we use an android project to show how to use the AndHook.
+In `app` module, we use an android project to show how to use the hook toolkit.
 
 ## Hook with AndHook
 
