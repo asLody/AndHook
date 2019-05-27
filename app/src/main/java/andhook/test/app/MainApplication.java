@@ -5,8 +5,8 @@ import android.util.Log;
 
 import andhook.lib.AndHook;
 import andhook.lib.HookHelper;
+import andhook.test.AndHookConfig;
 import andhook.test.AndTest;
-import andhook.test.SimpleHookConfig;
 
 public final class MainApplication extends Application {
 
@@ -29,7 +29,7 @@ public final class MainApplication extends Application {
         Log.i(AndTest.LOG_TAG, "\nApplication started.\n--------------------------------");
 
         // 从指定的配置类中加载被 @Hook 标记的方法.
-        HookHelper.applyHooks(SimpleHookConfig.class);
-        Log.d(TAG, "SimpleHookConfig applied");
+        HookHelper.applyHooks(AndHookConfig.class);
+        Log.d(TAG, "AndHookConfig applied");
     }
 }

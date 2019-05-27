@@ -11,7 +11,7 @@ import andhook.test.ui.MainActivity;
  * @author <a href="mailto:qq2325690622@gmail.com>Deng Chao</a> on 2019/5/23
  */
 @SuppressWarnings("unused")
-public class SimpleHookConfig {
+public class AndHookConfig {
     private static final String TAG = AndTest.LOG_TAG;
     public static boolean passed = false;
 
@@ -71,7 +71,7 @@ public class SimpleHookConfig {
      * 必须使用静态方法进行配置.
      * <p>
      * 使用非静态方法进行配置时会出现错误日志:
-     * AndHook: method andhook.test.SimpleHookConfig@onResume must be static and its first argument must be Class<?> or Object!
+     * AndHook: method andhook.test.AndHookConfig@onResume must be static and its first argument must be Class<?> or Object!
      *
      * @since v3.6.2
      */

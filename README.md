@@ -10,11 +10,11 @@ A dynamic instrumentation framework designed for usage within process scope.
 
 In `app` module, we use an android project to show how to use the AndHook.
 
-## Hook java method
+## Hook with AndHook
 
 ```java
 /** Define hook configuration */
-public class SimpleHookConfig {
+public class AndHookConfig {
     /** Hook Activity's onStart() method */
     @HookHelper.Hook(clazz = Activity.class)
     private static void onStart(Activity activity) {
@@ -31,7 +31,7 @@ public class MainApplication extends Application {
         // Make sure AndHook's native library is loaded first.
         AndHook.ensureNativeLibraryLoaded(null);
         // Then apply hook configuration before target method running.
-        HookHelper.applyHooks(SimpleHookConfig.class);
+        HookHelper.applyHooks(AndHookConfig.class);
     }
 }
 

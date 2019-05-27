@@ -13,6 +13,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import andhook.lib.AndHook;
+import andhook.test.AndHookConfig;
 import andhook.test.AndTest;
 import andhook.test.Constructor;
 import andhook.test.GC;
@@ -20,7 +21,6 @@ import andhook.test.InnerException;
 import andhook.test.JNI;
 import andhook.test.Native;
 import andhook.test.R;
-import andhook.test.SimpleHookConfig;
 import andhook.test.Static;
 import andhook.test.SystemClass;
 import andhook.test.Threads;
@@ -114,7 +114,7 @@ public class MainActivity extends Activity {
 
         output(AndHook.class + " version " + AndHook.VERSION + " (" + AndHook.getVersionInfo() + ")");
 
-        if (!SimpleHookConfig.passed) alert("Activity::onCreate hook failed!");
+        if (!AndHookConfig.passed) alert("Activity::onCreate hook failed!");
 
         findViewById(R.id.JNI).setOnClickListener(v -> JNI.test());
         findViewById(R.id.Xposed).setOnClickListener(v -> Xposed.test());
